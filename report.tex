@@ -1,0 +1,647 @@
+\documentclass[12pt]{report}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{lmodern}
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]{\normalfont\Huge\bfseries}{\thechapter.}{1em}{}
+
+\usepackage{setspace}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue}
+
+\sloppy
+\setstretch{1.4}
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{0.4cm}
+        {\Large \textbf{Comparison of Lightweight Encryption Algorithms}}\\[0.3cm]
+
+        {\large A comparative study of secure and efficient cryptographic primitives\\
+        for resource-constrained embedded systems}\\[1.0cm]
+
+        \textbf{Technical Writing Report Submitted}\\
+        in partial fulfillment of the requirements for the award of the\\
+        \textbf{Bachelor of Technology}\\[1.0cm]
+        {\large \textbf{Authors}}\\[0.25cm]
+
+        \begin{tabular}{ll}
+            \textbf{Rajesh Kumar Jena} & (B122088) \\
+            \textbf{Soumil Kumar}      & (B122114) \\
+            \textbf{Punit Kumar}       & (B422041)
+        \end{tabular}\\[1.0cm]
+
+        {\large \textbf{Under the supervision of}}\\[0.2cm]
+        {\textbf{Prof. Debasish Jena}}\\[1.0cm]
+
+        \includegraphics[width=0.22\textwidth]{iiit-bh-logo.png}\\[0.4cm]
+        {\large International Institute of Information Technology, Bhubaneswar}\\[0.15cm]
+        {\large November 2025}
+
+    \end{center}
+\end{titlepage}
+
+\newpage
+\chapter*{Approval of the Viva-Voce Board}
+\addcontentsline{toc}{chapter}{Approval of the Viva-Voce Board}
+\vspace{1cm}
+\noindent November 18, 2025
+
+\vspace{1cm}
+
+\noindent Certified that the report entitled ``Comparison of Lightweight Encryption Algorithms'' submitted by Rajesh Kumar Jena (B122088), Soumil Kumar (B122114), Punit Kumar (B422041) to International Institute of Information Technology Bhubaneswar in partial fulfilment of the Technical Writing requirements for the award of the Bachelor of Technology under the B.Tech Programme has been accepted by the examiners during the viva-voce examination held today.
+
+\vfill
+
+\noindent Prof. Tushar Ranjan Sahoo \hfill Prof. Sabyasachi Patra
+
+\vspace{1cm}
+
+\noindent Prof. Srichandan Sobhanayak \hfill Prof. Debasish Jena
+
+\newpage
+\chapter*{Certificate}
+\addcontentsline{toc}{chapter}{Certificate}
+This is to certify that the report entitled ``Comparison of Lightweight Encryption Algorithms'' submitted by Rajesh Kumar Jena (B122088), Soumil Kumar (B122114), Punit Kumar (B422041) to International Institute of Information Technology Bhubaneswar is a record of bonafide work under my supervision, and the report is submitted for end-semester evaluation of the BTech Technical Writing work.
+
+\vfill
+
+\noindent Prof. Debasish Jena
+
+\newpage
+\chapter*{Declaration}
+\addcontentsline{toc}{chapter}{Declaration}
+
+We hereby declare that:
+
+\begin{enumerate}
+    \item The work presented in this report is entirely our own and was carried out under the guidance of our supervisor.
+    \item This report has not been submitted, either in part or in full, to any other institution for the award of any degree or diploma.
+    \item We have adhered to the Ethical Code of Conduct prescribed by the Institute while carrying out this work.
+    \item Wherever we have quoted material from other sources, we have placed such quotations within quotation marks and provided appropriate citations and references.
+    \item Whenever we have used ideas, data, analysis, or text derived from other sources, we have duly acknowledged them within the report and included full details in the reference section.
+    \item We have followed all guidelines and formatting instructions stipulated by the Institute for the preparation of this report.
+\end{enumerate}
+
+\vspace{1cm}
+
+\noindent \textbf{Rajesh Kumar Jena} \hfill B122088\\
+\textbf{Soumil Kumar} \hfill B122114\\
+\textbf{Punit Kumar} \hfill B422041
+
+\newpage
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+We would like to express our sincere gratitude to our supervisor, Prof.\ Debasish Jena, for his invaluable guidance, continuous support, and insightful feedback throughout the course of this project. His expertise and encouragement were instrumental in helping us navigate challenges and refine our work.
+
+We are also grateful to the faculty and staff of the Department of Computer Science and Engineering and the Department of Information Technology at the International Institute of Information Technology, Bhubaneswar, for providing the resources, infrastructure, and academic environment necessary for the successful completion of this project.
+
+Finally, we extend our heartfelt thanks to our families and friends for their constant motivation, understanding, and encouragement during the entire duration of this work.
+
+\vspace{1cm}
+
+\noindent \textbf{Rajesh Kumar Jena}\\
+\textbf{Soumil Kumar}\\
+\textbf{Punit Kumar}
+
+\newpage
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Lightweight cryptography has emerged as a critical requirement for securing the rapidly growing ecosystem of resource-constrained devices such as IoT nodes, embedded controllers, RFID tags, and sensor networks. Traditional cryptographic algorithms, while secure, often demand computational power, memory, and energy far beyond the capabilities of these systems. This report presents a comparative study of three prominent lightweight encryption algorithms—PRESENT, SPECK, and ASCON—with the objective of evaluating their suitability for deployment in constrained embedded environments.
+
+The analysis combines theoretical examination of algorithmic design principles with practical performance benchmarking on a Raspberry Pi Pico microcontroller using software implementations written in Rust. Metrics such as execution time, memory usage, throughput, and structural security properties are systematically assessed to highlight the trade-offs among hardware-oriented, software-optimized, and modern authenticated encryption schemes. The study provides clear insights into how lightweight ciphers balance security and efficiency, offering a grounded understanding of their applicability for real-world embedded systems.
+
+\vspace{1cm}
+
+\noindent \textbf{Keywords}: lightweight cryptography, embedded systems, PRESENT, SPECK, ASCON, IoT security, performance evaluation
+
+\newpage
+\tableofcontents
+
+\newpage
+\chapter{Introduction}
+
+\section{Historical Context and Background}
+
+Cryptography has supported secure communication for thousands of years, beginning with simple manual techniques used by ancient civilizations. Early methods such as the Spartan \textit{scytale} (5th century BCE) used basic transposition to conceal messages~\cite{singh2000codebook}. Similar substitution and coded-writing techniques appeared in the Indian \textit{Arthashastra} and Chinese administrative systems~\cite{singh2000codebook}. These schemes relied primarily on obscurity, but they established the foundations of systematic secure communication.
+
+A major advancement occurred in the medieval period when Al-Kindi introduced frequency analysis (9th century), enabling the first structured approach to cryptanalysis~\cite{alkindi1987manuscript}. Renaissance-era developments such as Alberti's polyalphabetic cipher further strengthened resistance against statistical attacks~\cite{singh2000codebook}.
+
+The 20th century introduced electromechanical cipher machines including the Enigma, whose complexity significantly expanded the practical key space. Its cryptanalysis at Bletchley Park demonstrated the growing role of computation in security and is often cited as the beginning of modern cryptanalysis~\cite{hodges2014turing}.
+
+Modern cryptography emerged in the late 20th century with standardized symmetric and public-key systems. AES provided robust symmetric-key encryption~\cite{nist2001aes}, while Diffie–Hellman key exchange~\cite{diffie1976new} and RSA~\cite{rivest1978method} enabled secure communication over untrusted networks.
+
+\section{Motivation: Computing at the Edge}
+
+With the rapid expansion of the Internet of Things (IoT), billions of devices now operate with severe restrictions on processing power, memory, and energy~\cite{al2015iot,ogonji2020iot}. Typical constrained devices provide only a few tens of kilobytes of RAM, limited Flash storage, low-frequency microcontrollers, and battery-operated power sources. Traditional cryptographic algorithms—designed for desktops and servers—are often too heavy to deploy on such platforms.
+
+This limitation has driven the development of \textit{lightweight cryptography}: algorithms engineered to balance security, performance, and implementation cost for constrained environments~\cite{nist2023lwc}. Lightweight designs aim to:
+
+\begin{itemize}
+    \item minimize computational operations and cycle counts,
+    \item reduce RAM/ROM footprint,
+    \item operate efficiently on low-power hardware,
+    \item maintain practical security levels (typically 80--128 bits).
+\end{itemize}
+
+This report explores lightweight encryption algorithms as viable solutions for secure communication on embedded devices such as the Raspberry Pi Pico.
+
+\section{Problem Statement}
+
+Conventional algorithms such as AES, RSA, and ECC offer strong security but were developed with the assumption of abundant computational and memory resources. Their execution and storage requirements often exceed the capabilities of microcontrollers commonly used in IoT devices~\cite{al2015iot}.
+
+Devices with 8--133\,MHz processors, 2--64\,KB RAM, and limited energy budgets struggle to run cryptographic routines that require large lookup tables, multi-precision arithmetic, or high cycle counts~\cite{al2015iot}. As a result, developers frequently deploy weakened or incomplete security mechanisms, leading to vulnerabilities such as unencrypted communication, reused keys, and easily bypassed authentication. Incidents like the Mirai botnet attack highlight the consequences of insecure embedded systems.
+
+Lightweight cryptography addresses this gap by offering efficient primitives tailored for constrained platforms without compromising core security goals.
+
+\section{Objectives}
+
+This report aims to:
+
+\begin{itemize}
+    \item study the evolution and design principles of lightweight cryptographic algorithms;
+    \item evaluate selected lightweight ciphers (PRESENT, SPECK, ASCON) across execution time, memory usage, and implementation cost;
+    \item analyze their security properties based on available cryptanalytic literature;
+    \item implement and benchmark these algorithms on a Raspberry Pi Pico using Rust~\cite{rustembedded2022};
+    \item identify design trade-offs and discuss their suitability for real-world constrained environments.
+\end{itemize}
+
+\chapter{Literature Survey}
+
+\section{Introduction to Lightweight Cryptography}
+
+Lightweight cryptography focuses on designing secure primitives that operate efficiently under the strict computational, memory, and energy constraints of resource-limited embedded and IoT devices~\cite{bogdanov2007present,beaulieu2015simon}. Unlike traditional algorithms such as AES or RSA, which assume powerful processors and ample memory, lightweight designs must balance three primary goals: security, performance, and implementation cost.
+
+As billions of low-power devices become interconnected, the need for algorithms tailored to constrained environments has become critical. Lightweight primitives achieve this by minimizing round complexity, reducing memory usage, and avoiding expensive arithmetic operations~\cite{mckay2017nist}.
+
+\subsection*{Defining Lightweight Characteristics}
+
+Lightweight algorithms typically exhibit:
+
+\begin{itemize}
+    \item \textbf{Computational efficiency}: reliance on simple operations such as XOR, bit rotations, and small S-box lookups.
+    \item \textbf{Small memory footprint}: targeting less than 2~KB of Flash and under 1~KB of RAM to accommodate small microcontrollers and RFID-class devices.
+    \item \textbf{Energy efficiency}: avoiding expensive operations (e.g., modular arithmetic, large lookup tables) to prolong battery life in constrained platforms.
+\end{itemize}
+
+These features differentiate lightweight ciphers from conventional symmetric and public-key algorithms, which often exceed the capabilities of embedded hardware.
+
+\subsection*{The Lightweight Design Trilemma}
+
+The development of lightweight ciphers is governed by a trade-off between:
+
+\begin{itemize}
+    \item \textbf{Security}: maintaining resistance to differential, linear, and structural attacks at 80--128 bit security levels.
+    \item \textbf{Performance}: enabling real-time operation on 8-bit and 32-bit microcontrollers.
+    \item \textbf{Implementation cost}: minimizing area (in hardware), code size (in software), and RAM usage.
+\end{itemize}
+
+Balancing these three factors requires careful design of round functions, diffusion layers, and key schedules.
+
+\section{Categories of Lightweight Cryptographic Algorithms}
+
+Lightweight designs span multiple cryptographic classes. The following categories represent the most relevant primitives for constrained environments.
+
+\subsection{Lightweight Block Ciphers}
+
+Block ciphers remain the most widely studied category due to their simplicity and versatility. Common designs include:
+
+\begin{itemize}
+    \item \textbf{PRESENT}: a hardware-oriented 64-bit SPN cipher known for extremely low gate count~\cite{bogdanov2007present}.
+    \item \textbf{SIMON \& SPECK}: NSA-designed lightweight ciphers optimized for hardware (SIMON) and software (SPECK), covering multiple block and key sizes~\cite{beaulieu2015simon}.
+    \item \textbf{CLEFIA}: a Sony-designed Feistel cipher offering strong diffusion with efficient hardware performance.
+\end{itemize}
+
+These ciphers demonstrate different strategies for achieving compactness while maintaining adequate security margins.
+
+\subsection{Lightweight Stream Ciphers}
+
+Stream ciphers generate a keystream for encrypting data and are well-suited for applications requiring high speed and low latency.
+
+Examples include:
+
+\begin{itemize}
+    \item \textbf{GRAIN-128a}: built using LFSR and NFSR components~\cite{hell2007grain}.
+    \item \textbf{TRIVIUM}: an eSTREAM finalist~\cite{canniere2008trivium}.
+\end{itemize}
+
+\subsection{Lightweight Hash Functions}
+
+Hash functions enable authentication and integrity in constrained environments.
+
+Notable designs include:
+
+\begin{itemize}
+    \item \textbf{PHOTON}: an AES-inspired design~\cite{guo2011photon}.
+    \item \textbf{SPONGENT}: a sponge-based lightweight hash~\cite{bogdanov2011spongent}.
+\end{itemize}
+
+\subsection{Lightweight Authenticated Encryption}
+
+Authenticated encryption combines confidentiality and integrity in a single primitive. The most significant modern lightweight AEAD design is:
+
+\begin{itemize}
+    \item \textbf{ASCON}: the NIST Lightweight Cryptography Standard (2023), offering efficient authenticated encryption and hashing across hardware and software platforms~\cite{dobraunig2016ascon}.
+\end{itemize}
+
+ASCON's balance of security, efficiency, and simplicity makes it a leading candidate for future IoT deployments.
+
+\section{Selected Algorithms for Evaluation}
+
+This study focuses on three lightweight algorithms chosen for practical implementation and benchmarking on the Raspberry Pi Pico: PRESENT, SPECK, and ASCON. They represent distinct design philosophies and cover both classical and modern lightweight approaches.
+
+\subsection{PRESENT Cipher}
+
+PRESENT is a compact 64-bit SPN block cipher designed for ultra-lightweight hardware. Its 4-bit S-box and bit-permutation layer minimize gate count, making it suitable for RFID tags, sensor nodes, and smart cards. With a cost of about 1570~GE for PRESENT-80, it is one of the smallest standardized block ciphers~\cite{bogdanov2007present}. Although not optimized for high software speed, its simplicity makes it ideal for highly constrained hardware.
+
+\subsection{SIMON Cipher (Reference Algorithm)}
+
+SIMON uses a Feistel network with operations limited to bitwise AND, XOR, and rotations. This leads to extremely compact hardware implementations. Multiple block and key sizes allow tuning for different security and performance needs~\cite{beaulieu2015simon}. Due to concerns about NSA involvement, SIMON is not implemented in this project but is included for literature completeness.
+
+\subsection{SPECK Cipher}
+
+SPECK is optimized for software using an ARX (Add-Rotate-XOR) structure. Its round function is simple, compact, and efficient on general-purpose microcontrollers. SPECK achieves high performance, small code size, and low RAM usage, making it ideal for embedded systems with limited computation capability~\cite{beaulieu2015simon}. Despite debates about its origin, SPECK remains one of the fastest lightweight ciphers reported in literature.
+
+\subsection{ASCON Cipher}
+
+ASCON represents the modern generation of lightweight cryptography. Based on a sponge-duplex construction, it supports authenticated encryption and hashing with a 320-bit internal state. ASCON provides a strong balance of security, simplicity, and efficiency across both hardware and software, leading to its selection as the NIST Lightweight Cryptography Standard~\cite{dobraunig2016ascon,nist2023lwc}. It is well-suited for IoT communication, firmware authentication, and embedded control systems.
+
+\bigskip
+
+This literature survey establishes the foundational understanding of lightweight cryptographic design and motivates the selection of PRESENT, SPECK, and ASCON for practical evaluation in subsequent chapters.
+
+\chapter{Proposed Comparative Framework and Methodology}
+
+This chapter outlines the methodology adopted to evaluate three lightweight cryptographic algorithms---PRESENT, SPECK, and ASCON---on a real embedded platform. The goal is to perform a fair, reproducible, and practically feasible comparison using only software instrumentation on the Raspberry Pi Pico~\cite{raspberry2021pico}, without relying on specialized laboratory equipment. The framework includes performance measurement, memory analysis, security comparison, and justification for algorithm selection.
+
+\section{Evaluation Criteria}
+
+Lightweight cryptographic algorithms must be assessed across dimensions directly relevant to constrained devices. The proposed evaluation criteria combine quantitative measurements obtained through Rust-based implementations and qualitative analysis informed by published literature.
+
+\subsection{Performance Metrics}
+
+Performance evaluation focuses on the efficiency with which each algorithm executes on the ARM Cortex-M0+ microcontroller~\cite{arm2020cortex}.
+
+\subsubsection*{Execution Time}
+Execution time will be recorded for:
+\begin{itemize}
+    \item Key schedule generation
+    \item Single-block encryption and decryption
+    \item Full-message encryption for 64~B, 256~B, and 1024~B inputs
+\end{itemize}
+
+Timing measurements will be obtained using the Raspberry Pi Pico's hardware timer via the \texttt{rp2040-hal} crate. Since the Cortex-M0+ lacks a hardware cycle counter, cycle counts will be derived using:
+\[
+    \textit{cycles} = \textit{time} \times 133\textit{ MHz}.
+\]
+
+\subsubsection*{Cycles Per Byte (CPB)}
+CPB provides a platform-independent measure of efficiency:
+\[
+    \textit{CPB} = \frac{\textit{total cycles}}{\textit{total bytes processed}}.
+\]
+
+\subsubsection*{Memory Utilization}
+Memory usage is essential for deployment on small embedded devices. The analysis records:
+\begin{itemize}
+    \item \textbf{ROM footprint}: measured from the compiled binary size (\texttt{cargo size --release})
+    \item \textbf{Static RAM usage}: obtained from ELF metadata (\texttt{.bss} and \texttt{.data} sections)
+    \item \textbf{Working RAM}: estimated based on internal state, S-boxes, and buffers
+\end{itemize}
+Dynamic allocation is avoided through \texttt{\#![no\_std]} and fixed-size arrays, ensuring deterministic memory behavior.
+
+\subsubsection*{Throughput}
+Throughput (bytes/s) will be measured by encrypting buffers of fixed sizes and computing:
+\[
+    \textit{throughput} = \frac{\textit{bytes processed}}{\textit{time}}.
+\]
+This metric highlights scaling behavior, particularly for ASCON's AEAD mode.
+
+\subsection{Security Metrics}
+
+Security analysis is literature-based, focusing on the theoretical and practical robustness of each algorithm.
+
+\subsubsection*{Security Level}
+The comparative analysis includes:
+\begin{itemize}
+    \item Key sizes (80-bit, 128-bit)
+    \item Block sizes and internal state
+    \item Expected brute-force resistance
+\end{itemize}
+
+\subsubsection*{Cryptanalytic Resistance}
+The study summarizes known attacks, including differential and linear cryptanalysis, meet-in-the-middle, algebraic attacks, and rotational attacks (notably relevant for ARX-based ciphers like SPECK).
+
+\subsubsection*{Structural Robustness}
+A structural comparison is performed based on:
+\begin{itemize}
+    \item PRESENT's S-box and bit-permutation design
+    \item SPECK's ARX-based Feistel structure
+    \item ASCON's sponge-based permutation
+\end{itemize}
+
+\section{Algorithm Selection}
+
+The selected algorithms represent three major lightweight cryptographic design approaches and are practical for implementation on the Raspberry Pi Pico.
+
+\subsection*{PRESENT}
+A compact SPN block cipher standardized in ISO/IEC 29192-2. Its small hardware footprint makes it a representative hardware-oriented lightweight cipher.
+
+\subsection*{SPECK}
+A software-optimized ARX cipher offering high speed, minimal RAM usage, and small code size. It maps efficiently onto the Pico's Cortex-M0+ instruction set.
+
+\subsection*{ASCON}
+The NIST Lightweight Cryptography Standard (2023), offering AEAD functionality with balanced hardware and software performance.
+
+Together, these algorithms provide varied design philosophies while keeping the project scope manageable.
+
+\section{Implementation Plan}
+
+All experiments will be conducted using Rust on the Raspberry Pi Pico. This approach ensures practical relevance while remaining accessible within a B.Tech project timeline.
+
+\subsection{Software and Hardware Environment}
+
+\begin{itemize}
+    \item \textbf{Hardware}: Raspberry Pi Pico (ARM Cortex-M0+, 133\,MHz, 264\,KB SRAM, 2\,MB Flash)
+    \item \textbf{Language}: Rust (\texttt{no\_std} environment for embedded targets)
+    \item \textbf{Tools}: \texttt{rp2040-hal}, \texttt{probe-rs}, \texttt{cargo-embed}
+    \item \textbf{Build Profile}: Release mode with LTO and size optimization
+\end{itemize}
+
+Rust is chosen for memory safety, predictable performance, and strong embedded ecosystem support.
+
+\subsection{Performance Measurement Procedure}
+
+\begin{itemize}
+    \item Use Pico's hardware timer for microsecond-level timing.
+    \item Average results over at least 1000 iterations.
+    \item Measure single-block and multi-block performance.
+    \item Evaluate ASCON's initialization, associated-data processing, encryption, and tag generation.
+\end{itemize}
+
+\subsection{Memory Profiling Procedure}
+
+\begin{itemize}
+    \item Extract ROM and RAM usage from build artifacts.
+    \item Identify memory-heavy components such as S-box tables or state buffers.
+\end{itemize}
+
+\section{Summary of Methodology}
+
+The proposed framework is:
+\begin{itemize}
+    \item fully implementable using only Rust and the Raspberry Pi Pico,
+    \item suitable for a B.Tech project timeline,
+    \item comprehensive enough to evaluate performance, memory efficiency, and security robustness,
+    \item grounded in both practical experimentation and cryptographic literature.
+\end{itemize}
+
+This methodology ensures a fair and meaningful comparison of PRESENT, SPECK, and ASCON within the context of lightweight cryptography for constrained embedded systems.
+
+\chapter{Expected Results and Discussion}
+
+This chapter outlines the expected outcomes from the implementation and benchmarking of the PRESENT, SPECK, and ASCON algorithms on the Raspberry Pi Pico platform. Since the actual experimental results will be obtained during the BTP implementation phase, this chapter provides a discussion of anticipated trends based on published literature and the design characteristics of each algorithm.
+
+\section{Expected Performance Results}
+
+The performance of lightweight cryptographic algorithms on constrained microcontrollers is influenced primarily by their internal structure, operation complexity, and memory requirements. Based on prior studies and algorithm design philosophies, the following trends are expected.
+
+\subsection{Execution Time}
+
+\begin{itemize}
+    \item \textbf{SPECK} is expected to deliver the fastest execution time among the evaluated algorithms. Its ARX-based design (using additions, rotations, and XORs) maps efficiently to the Cortex-M0+ instruction set, resulting in minimal cycles per round.
+    \item \textbf{PRESENT} is anticipated to be slower than SPECK because of its bit-level permutations and S-box lookups, which introduce overhead, especially in software.
+    \item \textbf{ASCON} is expected to fall between PRESENT and SPECK in raw encryption speed. Its permutation-based design is relatively efficient, but the larger internal state (320 bits) and additional steps required for AEAD processing make it slower than SPECK.
+\end{itemize}
+
+These trends will likely appear clearly in the cycle-per-byte (CPB) and microsecond timing measurements.
+
+\subsection{Throughput}
+
+\begin{itemize}
+    \item \textbf{SPECK} should achieve the highest throughput across all message sizes due to its optimized round structure.
+    \item \textbf{ASCON} may show improved throughput for larger messages because its sponge duplex mode amortizes initialization cost over longer inputs.
+    \item \textbf{PRESENT} is expected to have the lowest throughput due to its small S-boxes and bit-permutation layer, which do not map efficiently to the Pico's architecture.
+\end{itemize}
+
+A typical expected trend is:
+
+\[
+    \textit{Throughput: SPECK } > \textit{ ASCON } > \textit{ PRESENT}
+\]
+
+\section{Expected Memory Utilization}
+
+\subsection{ROM Usage (Binary Size)}
+
+Based on implementation complexity:
+
+\begin{itemize}
+    \item \textbf{SPECK} should have the smallest ROM footprint due to the absence of lookup tables and use of simple operations.
+    \item \textbf{PRESENT} is expected to require additional ROM for S-box tables but still remain compact overall.
+    \item \textbf{ASCON} will likely have the highest ROM usage because of its larger state and more complex permutation rounds.
+\end{itemize}
+
+\subsection{RAM Usage}
+
+For static and working RAM:
+
+\begin{itemize}
+    \item \textbf{PRESENT} uses small 64-bit blocks and simple structures, resulting in minimal RAM usage.
+    \item \textbf{SPECK} also uses small working buffers and is expected to remain near PRESENT in RAM footprint.
+    \item \textbf{ASCON}, with its 320-bit state and additional temporary variables for AEAD operations, is expected to consume more RAM.
+\end{itemize}
+
+Thus, expected RAM usage pattern:
+
+\[
+    \textit{RAM: PRESENT } \approx \textit{ SPECK } < \textit{ ASCON}
+\]
+
+\section{Expected Security Observations}
+
+\subsection{Security Strength}
+
+All three algorithms offer secure designs for lightweight applications:
+
+\begin{itemize}
+    \item \textbf{ASCON} has the strongest modern security guarantees because it was selected as the NIST Lightweight Cryptography Standard.
+    \item \textbf{PRESENT-128} remains secure for long-term lightweight applications; PRESENT-80 offers reduced security margins but is still viable for low-value, short-lifetime deployments.
+    \item \textbf{SPECK} has strong cryptanalytic resistance despite initial controversy; however, some variants have tighter margins than ASCON.
+\end{itemize}
+
+\subsection{Cryptanalytic Resistance}
+
+Expected interpretations based on known literature:
+
+\begin{itemize}
+    \item \textbf{PRESENT} has undergone extensive analysis and is considered secure against practical attacks up to 28 rounds (out of 31).
+    \item \textbf{SPECK} resists differential and linear attacks well, though rotational cryptanalysis is an ongoing research topic.
+    \item \textbf{ASCON} provides strong resistance thanks to its sponge construction and permutation-based security arguments.
+\end{itemize}
+
+\section{Illustrative Result Tables}
+
+In the final BTP report, the following tables/figures will be populated using actual measurements.
+
+\subsection*{Example Table: Expected Metric Structure}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        Algorithm & Expected Speed & Expected ROM & Expected RAM \\
+        \hline
+        PRESENT   & Medium         & Medium       & Low          \\
+        SPECK     & High           & Low          & Low          \\
+        ASCON     & Medium         & High         & Medium       \\
+        \hline
+    \end{tabular}
+    \caption{Expected comparative trends for the evaluated algorithms.}
+    \label{tab:expected_trends}
+\end{table}
+
+\section{Discussion}
+
+Based on expected trends, SPECK is likely to provide the best performance in software, making it suitable for real-time applications on microcontrollers. PRESENT, although slower, offers strong compactness beneficial for ultra-low-cost hardware. ASCON provides the best combination of modern security and acceptable performance, particularly for applications requiring authenticated encryption.
+
+The expected outcomes reinforce the core principle of lightweight cryptography: different algorithms serve different constraints, and no single design dominates across all dimensions.
+
+The actual implementation results obtained during the BTP will further validate (or challenge) these expectations and enable a more nuanced discussion of algorithm suitability for modern embedded systems.
+
+\chapter{Conclusion and Future Work}
+
+\section{Conclusion}
+
+This report presented a structured investigation into lightweight cryptographic algorithms suitable for deployment on resource-constrained embedded platforms. Beginning with a historical overview of cryptographic evolution, the study examined the emergence of lightweight cryptography as a response to the limitations of modern IoT devices, which operate with restricted computational power, limited memory, and stringent energy constraints.
+
+A detailed literature survey outlined the fundamental characteristics of lightweight designs and categorized prominent algorithm families including block ciphers, stream ciphers, hash functions, and authenticated encryption schemes. From this survey, three representative algorithms---PRESENT, SPECK, and ASCON---were selected for comparative analysis based on their practicality, diversity in design, and suitability for microcontroller-based environments.
+
+A comprehensive methodology was proposed to evaluate these algorithms on the Raspberry Pi Pico using Rust, focusing on execution time, memory usage, throughput, and theoretical security robustness. The evaluation framework was intentionally designed to be fully implementable using software-only instrumentation, ensuring feasibility within a B.Tech project context.
+
+Based on their structural properties and published research, several expected trends were identified. SPECK is anticipated to deliver the highest software performance due to its ARX-based construction, PRESENT is expected to offer the lowest memory footprint due to its compact S-box and bit permutation structure, and ASCON is projected to provide the strongest balance of modern security and functional completeness due to its NIST standardization. These expected outcomes reaffirm that the choice of cryptographic primitive must be driven by the specific constraints and requirements of the target deployment environment.
+
+Overall, this report establishes a clear and practical foundation for evaluating lightweight cryptographic algorithms and offers a structured pathway for the empirical analysis to be conducted during the B.Tech Project implementation phase.
+
+\section{Future Work}
+
+This study lays the foundation for several promising research directions in lightweight cryptography:
+
+\begin{itemize}
+
+    \item \textbf{Extended Performance Analysis:}
+          Building upon the empirical benchmarking conducted in this study, future work could incorporate energy consumption measurements, thermal profiling, or analysis of cryptographic agility when switching between algorithms at runtime.
+
+    \item \textbf{Algorithm Variants:}
+          Future work could include other lightweight ciphers such as SIMON, GIFT, or PRINCE, or compare multiple ASCON variants (e.g., Ascon-128, Ascon-128a) for different security and performance trade-offs.
+
+    \item \textbf{Hardware Acceleration Analysis:}
+          Investigating the impact of hardware accelerators (AES co-processors, ARM TrustZone, or custom FPGA implementations) could provide useful insight into system-level optimizations for secure IoT deployments.
+
+    \item \textbf{Real-World Protocol Integration:}
+          Incorporating lightweight cipher implementations into communication protocols such as MQTT, CoAP, or BLE could demonstrate their effectiveness in end-to-end IoT system security.
+
+    \item \textbf{Side-Channel Resistance:}
+          While beyond the scope of this report, analyzing the susceptibility of lightweight ciphers to timing, power, or EM side-channel attacks would provide a deeper assessment of their practical security properties.
+
+    \item \textbf{Automated Benchmarking Framework:}
+          A reusable benchmarking toolchain, written in Rust and tailored for microcontrollers, could automate timing, memory, and throughput measurements across multiple algorithms and platforms.
+
+\end{itemize}
+
+By extending the work in these directions, future research can provide a deeper understanding of lightweight cryptographic design, its deployment challenges, and its long-term role in securing next-generation embedded and IoT systems.
+
+\newpage
+\bibliographystyle{plain}
+\begin{thebibliography}{99}
+
+    \bibitem{singh2000codebook}
+    Simon Singh, \textit{The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography}. Anchor Books, 2000.
+
+    \bibitem{alkindi1987manuscript}
+    Al-Kindi, ``Risāla fī Istikhrāj al-Mu'ammā'' (Manuscript on Deciphering Cryptographic Messages), circa 850 CE. In: M. Mrayati, Y. Alam, \textit{Series of Arabic Cryptography Manuscripts}, vol. 1, 1987.
+
+    \bibitem{hodges2014turing}
+    Andrew Hodges, \textit{Alan Turing: The Enigma}. Princeton University Press, 2014.
+
+    \bibitem{nist2001aes}
+    National Institute of Standards and Technology, ``Advanced Encryption Standard (AES),'' FIPS PUB 197, 2001.
+    \url{https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf}
+
+    \bibitem{diffie1976new}
+    W. Diffie and M. Hellman, ``New Directions in Cryptography,'' \textit{IEEE Transactions on Information Theory}, vol. 22, no. 6, pp. 644--654, 1976.
+    \url{https://ee.stanford.edu/~hellman/publications/24.pdf}
+
+    \bibitem{rivest1978method}
+    R. Rivest, A. Shamir, and L. Adleman, ``A Method for Obtaining Digital Signatures and Public-Key Cryptosystems,'' \textit{Communications of the ACM}, vol. 21, no. 2, pp. 120--126, 1978.
+    \url{https://people.csail.mit.edu/rivest/Rsapaper.pdf}
+
+    \bibitem{bogdanov2007present}
+    A. Bogdanov, L. R. Knudsen, G. Leander, C. Paar, A. Poschmann, M. J. B. Robshaw, Y. Seurin, and C. Vikkelsoe, ``PRESENT: An Ultra-Lightweight Block Cipher,'' in \textit{Proceedings of CHES 2007}, LNCS 4727, pp. 450--466, Springer, 2007.
+    \url{https://link.springer.com/chapter/10.1007/978-3-540-74735-2_31}
+
+    \bibitem{beaulieu2015simon}
+    R. Beaulieu, D. Shors, J. Smith, S. Treatman-Clark, B. Weeks, and L. Wingers, ``The SIMON and SPECK Lightweight Block Ciphers,'' in \textit{Proceedings of the 52nd ACM/EDAC/IEEE Design Automation Conference (DAC)}, pp. 1--6, 2015.
+    \url{https://eprint.iacr.org/2013/404.pdf}
+
+    \bibitem{dobraunig2016ascon}
+    C. Dobraunig, M. Eichlseder, F. Mendel, and M. Schläffer, ``ASCON v1.2: Lightweight Authenticated Encryption and Hashing,'' \textit{Journal of Cryptology}, vol. 34, no. 3, pp. 1--42, 2021.
+    \url{https://ascon.iaik.tugraz.at/}
+
+    \bibitem{nist2023lwc}
+    National Institute of Standards and Technology, ``Lightweight Cryptography: ASCON,'' \textit{FIPS 203 (Draft)}, 2023.
+    \url{https://csrc.nist.gov/pubs/fips/203/ipd}
+
+    \bibitem{mckay2017nist}
+    K. A. McKay and L. Bassham, ``Report on Lightweight Cryptography,'' NISTIR 8114, National Institute of Standards and Technology, 2017.
+    \url{https://nvlpubs.nist.gov/nistpubs/ir/2017/NIST.IR.8114.pdf}
+
+    \bibitem{guo2011photon}
+    J. Guo, T. Peyrin, and A. Poschmann, ``The PHOTON Family of Lightweight Hash Functions,'' in \textit{Proceedings of CRYPTO 2011}, LNCS 6841, pp. 222--239, Springer, 2011.
+    \url{https://link.springer.com/chapter/10.1007/978-3-642-22792-9_13}
+
+    \bibitem{bogdanov2011spongent}
+    A. Bogdanov, M. Knežević, G. Leander, D. Toz, K. Varıcı, and I. Verbauwhede, ``SPONGENT: A Lightweight Hash Function,'' in \textit{Proceedings of CHES 2011}, LNCS 6917, pp. 312--325, Springer, 2011.
+    \url{https://link.springer.com/chapter/10.1007/978-3-642-23951-9_21}
+
+    \bibitem{hell2007grain}
+    M. Hell, T. Johansson, and W. Meier, ``Grain: A Stream Cipher for Constrained Environments,'' \textit{International Journal of Wireless and Mobile Computing}, vol. 2, no. 1, pp. 86--93, 2007.
+    \url{https://dl.acm.org/doi/10.1504/IJWMC.2007.013798}
+
+    \bibitem{canniere2008trivium}
+    C. De Cannière and B. Preneel, ``Trivium,'' in \textit{New Stream Cipher Designs}, LNCS 4986, pp. 244--266, Springer, 2008.
+    \url{https://link.springer.com/chapter/10.1007/978-3-540-68351-3_18}
+
+    \bibitem{al2015iot}
+    S. Al-Sarawi, M. Anbar, K. Alieyan, and M. Alzubaidi, ``Internet of Things (IoT) Communication Protocols: Review,'' in \textit{2017 8th International Conference on Information Technology (ICIT)}, 2017.
+    \url{https://ieeexplore.ieee.org/document/8079928}
+
+    \bibitem{ogonji2020iot}
+    M. M. Ogonji, G. Okeyo, and J. M. Wafula, ``A Survey on Privacy and Security of Internet of Things,'' \textit{Computer Networks}, vol. 174, 107057, 2020.
+    \url{https://www.sciencedirect.com/science/article/pii/S1574013720304123}
+
+    \bibitem{arm2020cortex}
+    ARM Limited, ``ARM Cortex-M0+ Technical Reference Manual,'' ARM DDI 0484C, 2020.
+    \url{https://developer.arm.com/documentation/ddi0484/c/}
+
+    \bibitem{raspberry2021pico}
+    Raspberry Pi Foundation, ``Raspberry Pi Pico Datasheet,'' 2021.
+    \url{https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf}
+
+    \bibitem{rustembedded2022}
+    Rust Embedded Working Group, ``The Embedded Rust Book,'' 2022.
+    \url{https://docs.rust-embedded.org/book/}
+
+\end{thebibliography}
+\end{document}
