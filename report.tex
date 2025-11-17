@@ -56,8 +56,8 @@
 \end{titlepage}
 
 \newpage
-\chapter*{Approval of the Viva-Voce Board}
-\addcontentsline{toc}{chapter}{Approval of the Viva-Voce Board}
+\chapter*{Approval of the Viva-Voice Board}
+\addcontentsline{toc}{chapter}{Approval of the Viva-Voice Board}
 \vspace{1cm}
 \noindent November 18, 2025
 
@@ -67,7 +67,7 @@
 submitted by Rajesh Kumar Jena (B122088), Soumil Kumar (B122114), and Punit Kumar (B422041)
 to the International Institute of Information Technology, Bhubaneswar, in partial fulfillment
 of the Technical Writing requirements for the award of the Bachelor of Technology under the
-B.Tech Programme, has been accepted by the examiners during the viva-voce examination held today.
+B.Tech Programme, has been accepted by the examiners during the viva-voice examination held today.
 
 \vfill
 
@@ -260,7 +260,7 @@ Lightweight algorithms typically exhibit:
           to prolong battery life in constrained platforms.
 \end{itemize}
 
-These features differentiate lightweight ciphers from conventional symmetric- and public-key
+These features differentiate lightweight ciphers from conventional symmetric and public-key
 algorithms, which typically exceed the capabilities of embedded hardware.
 
 \subsection*{The Lightweight Design Trilemma}
@@ -492,34 +492,42 @@ calls, and then ciphertext and authentication tags are produced by squeezing fro
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-            >=Stealth,
-            node distance=1cm,
-            box/.style={draw, minimum width=7cm, minimum height=1.0cm, align=center},
-            smallbox/.style={draw, minimum width=3.2cm, minimum height=0.8cm, align=center}
+            box/.style={draw, rounded corners, thick, minimum width=4.5cm, minimum height=1.3cm, align=center},
+            smallbox/.style={draw, rounded corners, thick, minimum width=3cm, minimum height=0.8cm, align=center},
+            arrow/.style={->, thick, >=Stealth},
+            node distance=1.2cm and 1.5cm
         ]
 
-        \node[box] (state) {ASCON State (320 bits)};
-        \draw (state.south west) -- ++(3.5,0) node[pos=0.5, below] {Rate};
-        \draw (state.south west) ++(3.5,0) -- (state.south east) node[pos=0.5, below] {Capacity};
+        \node[box] (state) {
+            \textbf{ASCON State} (320 bits)\\
+            \scriptsize
+            \begin{tabular}{c|c}
+                Rate (64 bits) & Capacity (256 bits) \\
+            \end{tabular}
+        };
 
-        \node[smallbox, above=1.2cm of state.west, anchor=west] (aad) {Associated Data};
-        \draw[->] (aad.south) |- (state.west);
+        \node[smallbox, above left=of state] (ad) {Associated Data};
+        \node[smallbox, left=of state] (pt) {Plaintext Blocks};
 
-        \node[smallbox, below=1.4cm of state.west, anchor=west] (pt) {Plaintext Blocks};
-        \node[smallbox, right=4.0cm of pt] (ct) {Ciphertext Blocks};
-        \draw[->] (pt.north) |- (state.west);
-        \draw[->] (state.east) |- (ct.north);
+        \node[smallbox, above right=of state] (ct) {Ciphertext Blocks};
+        \node[smallbox, below=of state] (tag) {Authentication Tag};
 
-        \node[smallbox, right=1.3cm of state] (perm) {Permutation $p$};
-        \draw[->] (state.east) -- (perm.west);
-        \draw[->] (perm.west) -- (state.east);
+        \node[box, right=2.5cm of state] (perm) {\textbf{Permutation} $p^a$, $p^b$};
 
-        \node[smallbox, below=0.8cm of ct] (tag) {Authentication Tag};
-        \draw[->] (state.south) |- (tag.west);
+        \draw[arrow, dashed] (state.east) -- node[above] {\scriptsize Update} (perm.west);
+        \draw[arrow, dashed] (perm.west) -- node[below] {\scriptsize New State} (state.east);
+
+        \draw[arrow] (ad.south) -- (state.north west);
+        \draw[arrow] (pt.east) -- (state.west);
+        \draw[arrow] (state.east) -- (ct.west);
+        \draw[arrow] (state.south) -- (tag.north);
+
+        \node[above=0.1cm of ad] {\scriptsize Absorb};
+        \node[above=0.1cm of ct] {\scriptsize Squeeze};
 
     \end{tikzpicture}
-    \caption{High-level view of ASCON authenticated-encryption using a sponge-duplex construction.}
-    \label{fig:ascon-sponge}
+    \caption{ASCON authenticated encryption using a sponge-duplex structure.}
+    \label{fig:ascon_sponge_modern}
 \end{figure}
 
 \subsection*{High-Level AEAD Pseudocode}
