@@ -59,7 +59,7 @@
 \chapter*{Approval of the Viva-Voice Board}
 \addcontentsline{toc}{chapter}{Approval of the Viva-Voice Board}
 \vspace{1cm}
-\noindent November 18, 2025
+\noindent November 20, 2025
 
 \vspace{1cm}
 
@@ -587,11 +587,14 @@ with qualitative analysis based on cryptographic literature.
 Performance evaluation focuses on execution efficiency on the ARM Cortex-M0+ microcontroller.
 
 \subsubsection*{Execution Time}
-Execution time measurements include:
+
+Timing measurements utilize the RP2040's high-resolution hardware timer via \texttt{rp2040-hal}.
+For improved accuracy:
 \begin{itemize}
-    \item Key schedule generation,
-    \item Single-block encryption and decryption,
-    \item Full-message encryption for 64~B, 256~B, and 1024~B inputs.
+    \item Use \texttt{time\_us\_64()} for microsecond resolution
+    \item Disable interrupts during critical measurement sections
+    \item Calculate cycles as: $\textit{cycles} = \textit{time in microseconds} \times 133$
+    \item Perform warm-up runs before measurements to account for cache effects
 \end{itemize}
 
 Timing measurements utilize the hardware timer available on the Raspberry Pi Pico via the
@@ -601,12 +604,14 @@ Timing measurements utilize the hardware timer available on the Raspberry Pi Pic
 \]
 
 \subsubsection*{Cycles Per Byte (CPB)}
+
 CPB, a platform-independent indicator of efficiency, is computed as:
 \[
     \textit{CPB} = \frac{\textit{total cycles}}{\textit{total bytes processed}}.
 \]
 
 \subsubsection*{Memory Utilization}
+
 Memory analysis records:
 \begin{itemize}
     \item \textbf{ROM footprint}: compiled binary size (\texttt{cargo size --release}),
@@ -615,6 +620,7 @@ Memory analysis records:
 \end{itemize}
 
 \subsubsection*{Throughput}
+
 Throughput (bytes/s) is measured by encrypting buffers of fixed sizes:
 \[
     \textit{throughput} = \frac{\textit{bytes processed}}{\textit{time}}.
@@ -627,6 +633,7 @@ Security analysis is based on literature, focusing on theoretical strength and r
 against practical attacks.
 
 \subsubsection*{Security Level}
+
 Comparison includes:
 \begin{itemize}
     \item Key sizes (80-bit, 128-bit),
@@ -635,11 +642,13 @@ Comparison includes:
 \end{itemize}
 
 \subsubsection*{Cryptanalytic Resistance}
+
 The study summarizes known attacks, including differential and linear cryptanalysis,
 meet-in-the-middle attacks, algebraic attacks, and rotational attacks (notably relevant
 for ARX-based ciphers such as SPECK).
 
 \subsubsection*{Structural Robustness}
+
 A structural comparison evaluates:
 \begin{itemize}
     \item PRESENT’s S-box and bit-permutation layer,
@@ -692,8 +701,19 @@ relevance and feasibility within the project timeline.
 \subsection{Memory Profiling Procedure}
 
 \begin{itemize}
-    \item Extract ROM and RAM usage from build artifacts,
-    \item Identify memory-heavy components such as S-box tables or state buffers.
+    \item Use \texttt{cargo bloat {-}{-}release {-}{-}crates} to analyze code size per algorithm
+    \item Extract detailed section sizes using \texttt{cargo size {-}{-}release {-}{-} -A}
+    \item Analyze stack usage with \texttt{-Z emit-stack-sizes} (nightly feature)
+    \item Profile peak RAM usage by monitoring heap allocations and static buffers
+\end{itemize}
+
+\subsection{Implementation Validation}
+
+\begin{itemize}
+    \item Verify against official test vectors from algorithm specifications
+    \item Cross-validate with known reference implementations
+    \item Use known-answer tests for encryption/decryption consistency
+    \item Implement integrity checks for authentication tags (ASCON)
 \end{itemize}
 
 \section{Summary of Methodology}
