@@ -68,35 +68,6 @@ Supervisor: Prof. Debasish Jena
 \tableofcontents
 \end{frame}
 
-\begin{frame}{Executive Summary}
-\textbf{Current Status:}
-\begin{itemize}
-    \item \textbf{Implementation}: COMPLETE - Core ciphers (PRESENT, SPECK, ASCON) implemented in Rust
-    \item \textbf{Testing}: PARTIAL - Basic encryption/decryption tests pass, NIST KAT tests pending
-    \item \textbf{Host Benchmarks}: PARTIAL - Initial metrics collected, additional analysis in progress
-    \item \textbf{Pico Benchmarks}: PARTIAL - Initial benchmarks run, detailed analysis pending
-    \item \textbf{ROM/RAM Analysis}: PARTIAL - Host analysis complete, Pico-specific analysis pending
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Executive Summary: Key Findings}
-\textbf{Areas for Improvement (Future Work):}
-\begin{itemize}
-    \item NIST KAT (Known Answer Test) vector verification
-    \item Constant-time implementations for side-channel resistance
-    \item Energy consumption analysis
-\end{itemize}
-
-\vspace{0.3cm}
-\textbf{Key Findings:}
-\begin{itemize}
-    \item SPECK is the fastest (~32 Mbps on host, ~24 Mbps on Pico), approximately 70x faster than PRESENT
-    \item PRESENT has the smallest code footprint, designed for hardware efficiency
-    \item ASCON provides built-in authenticated encryption with modern security (NIST Standard 2023)
-    \item CTR mode offers best performance among encryption modes for SPECK
-\end{itemize}
-\end{frame}
-
 \section{Introduction}
 
 \begin{frame}{Motivation}
@@ -132,7 +103,42 @@ Supervisor: Prof. Debasish Jena
 \end{itemize}
 \end{frame}
 
-\section{Algorithm Overview}
+\section{Project Status}
+
+\begin{frame}{Current Progress}
+\small
+\begin{tabular}{lll}
+\toprule
+Task & Status & Notes \\
+\midrule
+Literature Survey & Complete & 100\% \\
+Algorithm Implementation & Complete & Core ciphers done \\
+Test Vector Verification & Partial & Basic tests pass, KAT pending \\
+Host Benchmarks & Partial & Initial metrics collected \\
+Pico Hardware Benchmarks & Partial & Initial benchmarks run \\
+ROM/RAM Analysis & Partial & Host analysis done \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+\textbf{Completed:}
+\begin{itemize}
+    \item Rust implementations: PRESENT, SPECK, and ASCON
+    \item Mode implementations: ECB, CBC, CTR for PRESENT and SPECK
+    \item Embedded \texttt{no\_std} library for target hardware
+    \item Basic validation: test vectors, consistency checks, ASCON tag verification
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{Pending:}
+\begin{itemize}
+    \item NIST KAT tests, ROM/RAM analysis on Pico
+    \item Energy consumption estimation
+    \item Final report compilation
+\end{itemize}
+\end{frame}
+
+\section{Implementation}
 
 \begin{frame}[fragile]{PRESENT}
 \begin{columns}
@@ -226,46 +232,6 @@ const fn p_sbox(s0: u64, s1: u64, s2: u64, s3: u64, s4: u64)
 \end{columns}
 \end{frame}
 
-\section{Project Status}
-
-\begin{frame}{Project Status}
-\small
-\begin{tabular}{lll}
-\toprule
-Task & Status & Notes \\
-\midrule
-Literature Survey & Complete & 100\% \\
-Algorithm Implementation & Complete & Core ciphers done \\
-Test Vector Verification & Partial & Basic tests pass, KAT pending \\
-Host Benchmarks & Partial & Initial metrics collected \\
-Pico Hardware Benchmarks & Partial & Initial benchmarks run \\
-ROM/RAM Analysis & Partial & Host analysis done \\
-\bottomrule
-\end{tabular}
-\end{frame}
-
-\begin{frame}{Completed Tasks and Pending Tasks}
-\small
-\textbf{Completed Tasks}
-\begin{itemize}
-    \item Rust implementations: PRESENT, SPECK, and ASCON
-    \item Mode implementations: ECB, CBC, CTR for PRESENT and SPECK
-    \item Embedded \texttt{no\_std} library for target hardware
-    \item Basic validation: test vectors, consistency checks, ASCON tag verification
-    \item Host machine validation tests
-\end{itemize}
-
-\textbf{Pending Tasks}
-\begin{itemize}
-    \item Final comparison and conclusions
-    \item ROM/RAM memory analysis on target hardware
-    \item Energy consumption estimation
-    \item Final report compilation
-\end{itemize}
-\end{frame}
-
-\section{Methodology}
-
 \begin{frame}{Methodology}
 \textbf{Evaluation Criteria}
 \begin{itemize}
@@ -293,40 +259,24 @@ ROM/RAM Analysis & Partial & Host analysis done \\
 \end{itemize}
 \end{frame}
 
-\section{Results and Discussion}
+\section{Results}
 
-\begin{frame}{Host Machine Benchmarks}
+\begin{frame}{Benchmarks}
 \small
-Benchmarks on x86\_64 validate the implementations; absolute values differ from Pico, but relative comparisons remain useful.
-
-\vspace{0.2cm}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Algorithm & ns/block & CPB & Mbps \\
+Algorithm & Platform & ns/block & CPB & Mbps \\
 \midrule
-PRESENT-80 & 16,949 & 2,119 & 0.47 \\
-PRESENT-128 & 16,990 & 2,124 & 0.47 \\
-SPECK-64/96 & 246 & 31 & 32.52 \\
-SPECK-64/128 & 245 & 31 & 32.65 \\
-ASCON-128 & 1,518 & 95 & 10.54 \\
-\bottomrule
-\end{tabular}
-\end{frame}
-
-\begin{frame}{Raspberry Pi Pico Benchmarks}
-\small
-Primary benchmarks were conducted on Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz).
-
-\vspace{0.2cm}
-\begin{tabular}{lrrr}
-\toprule
-Algorithm & ns/block & CPB & Mbps \\
-\midrule
-PRESENT-80 & 23,665 & 2,958 & 0.34 \\
-PRESENT-128 & 24,542 & 3,068 & 0.33 \\
-SPECK-64/96 & 336 & 42 & 23.81 \\
-SPECK-64/128 & 338 & 42 & 23.67 \\
-ASCON-128 & 2,117 & 132 & 7.56 \\
+PRESENT-80 & Host & 16,949 & 2,119 & 0.47 \\
+PRESENT-80 & Pico & 23,665 & 2,958 & 0.34 \\
+PRESENT-128 & Host & 16,990 & 2,124 & 0.47 \\
+PRESENT-128 & Pico & 24,542 & 3,068 & 0.33 \\
+SPECK-64/96 & Host & 246 & 31 & 32.52 \\
+SPECK-64/96 & Pico & 336 & 42 & 23.81 \\
+SPECK-64/128 & Host & 245 & 31 & 32.65 \\
+SPECK-64/128 & Pico & 338 & 42 & 23.67 \\
+ASCON-128 & Host & 1,518 & 95 & 10.54 \\
+ASCON-128 & Pico & 2,117 & 132 & 7.56 \\
 \bottomrule
 \end{tabular}
 \end{frame}
@@ -370,46 +320,34 @@ ASCON-128 & 2,117 & 132 & 7.56 \\
 \end{itemize}
 \end{frame}
 
-\section{Conclusion and Future Work}
+\section{Conclusion}
 
-\begin{frame}{Conclusion}
-This study investigates lightweight cryptographic algorithms for resource-constrained embedded platforms.
-
-\vspace{0.3cm}
-PRESENT, SPECK, and ASCON were evaluated using Rust-based implementations on Raspberry Pi Pico.
-
-\vspace{0.3cm}
-Results show that SPECK provides superior performance, PRESENT offers minimal memory footprint, and ASCON delivers strong modern security with functional completeness.
-\end{frame}
-
-\begin{frame}{Future Work}
-\small
-\textbf{Short-Term}
+\begin{frame}{Conclusion and Next Steps}
+\textbf{Conclusion}
 \begin{itemize}
-    \item \textbf{NIST KAT Tests}: Integrate official Known Answer Test vectors
-    \item PRESENT: ISO/IEC 29192-2 test vectors
-    \item SPECK: NSA-designed test vectors
-    \item ASCON: NIST LWC standardization test vectors
-    \item \textbf{Code Size Analysis}: Static analysis for .text/.data/.bss sections using cargo size
-    \item \textbf{Statistical Rigor}: Report median/min/max across multiple benchmark runs instead of single run
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Future Work}
-\small
-\textbf{Medium-Term}
-\begin{itemize}
-    \item \textbf{FELICS Comparison}: Compare against established lightweight crypto benchmarks (felics.eu)
-    \item \textbf{SUPERCOP-Style Timing}: Implement cycle-accurate benchmarking methodology
-    \item \textbf{Side-Channel Discussion}: Analyze timing attack resistance for ARX ciphers (SPECK)
+    \item PRESENT, SPECK, and ASCON were evaluated using Rust-based implementations on Raspberry Pi Pico
+    \item SPECK provides superior performance, PRESENT offers minimal memory footprint
+    \item ASCON delivers strong modern security with functional completeness (NIST Standard 2023)
 \end{itemize}
 
-\vspace{0.4cm}
-These directions will deepen the understanding of lightweight cryptographic design and facilitate secure IoT-system development.
+\vspace{0.3cm}
+\textbf{Short-Term Next Steps}
+\begin{itemize}
+    \item NIST KAT Tests: Integrate official Known Answer Test vectors
+    \item Code Size Analysis: Static analysis for .text/.data/.bss sections
+    \item Statistical Rigor: Report median/min/max across multiple runs
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{Medium-Term Next Steps}
+\begin{itemize}
+    \item FELICS Comparison: Compare against established lightweight crypto benchmarks
+    \item SUPERCOP-Style Timing: Implement cycle-accurate benchmarking
+    \item Side-Channel Discussion: Analyze timing attack resistance for ARX ciphers
+\end{itemize}
 \end{frame}
 
 \begin{frame}
-\centering
 \Huge Thank You\\
 \vspace{0.5cm}
 \end{frame}
