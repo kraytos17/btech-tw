@@ -5,3 +5,7 @@
 *.nav
 *.snm
 *.vrb
+*.bbl
+*.blg
+*.lof
+*.lot

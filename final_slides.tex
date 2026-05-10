@@ -1,0 +1,465 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{algorithmic}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\graphicspath{{images/}}
+
+\title[Lightweight Encryption]{Comparison of Lightweight Encryption Algorithms}
+\subtitle{B.Tech Final Year Project}
+
+\author[R. Jena, S. Kumar, P. Kumar]{
+Rajesh Kumar Jena (B122088) \and
+Soumil Kumar (B122114) \and
+Punit Kumar (B422041)
+}
+
+\institute{
+International Institute of Information Technology\\
+Bhubaneswar\\
+Supervisor: Prof. Debasish Jena
+}
+
+\date{May 2026}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Motivation and Problem Statement}
+\textbf{Context}
+\begin{itemize}
+    \item IoT deployments require cryptography on devices with limited CPU, memory, and energy
+    \item Conventional algorithms (AES, RSA, ECC) often exceed microcontroller resource limits
+    \item The Mirai botnet attack highlighted risks of insecure embedded systems
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Problem}
+\begin{itemize}
+    \item Developers sometimes deploy weakened or ad hoc security mechanisms
+    \item Lightweight cryptography provides efficient alternatives for constrained platforms
+    \item Need to balance security, performance, and implementation cost
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Objectives}
+This project aims to:
+\begin{itemize}
+    \item Examine the evolution and design principles of lightweight cryptographic algorithms
+    \item Evaluate selected lightweight ciphers (PRESENT, SPECK, ASCON) in terms of execution time, memory usage, and implementation cost
+    \item Analyze their security properties based on established cryptanalytic research
+    \item Implement and benchmark these algorithms on a Raspberry Pi Pico using Rust
+    \item Identify design trade-offs and assess suitability for real-world constrained environments
+\end{itemize}
+\end{frame}
+
+\section{Literature Survey}
+
+\begin{frame}{Lightweight Cryptography and Algorithms}
+\textbf{Key Characteristics:}
+\begin{itemize}
+    \item \textbf{Computational efficiency}: XOR, rotations, small S-box lookups
+    \item \textbf{Small footprint}: $<$2 KB Flash, $<$1 KB RAM
+    \item \textbf{Energy efficiency}: avoids modular arithmetic
+\end{itemize}
+
+\vspace{0.15cm}
+\textbf{Design Trilemma}: Security $\leftrightarrow$ Performance $\leftrightarrow$ Implementation Cost
+
+\vspace{0.15cm}
+\textbf{Three Ciphers Evaluated:}
+\begin{itemize}
+    \item \textbf{PRESENT}: 64-bit SPN cipher, 80/128-bit keys, ISO/IEC 29192-2
+    \item \textbf{SPECK}: Software-optimized ARX cipher, NSA-designed, highly efficient
+    \item \textbf{ASCON}: Modern AEAD primitive, NIST SP 800-232, authenticated encryption
+\end{itemize}
+\end{frame}
+
+\section{Algorithm Overview}
+
+\begin{frame}{Design Properties Comparison}
+\vspace{-0.2cm}
+\begin{table}
+    \centering
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Property} & \textbf{PRESENT} & \textbf{SPECK} & \textbf{ASCON} \\
+        \midrule
+        Block Size & 64 bits & 64 bits & 64 bits \\
+        Key Sizes & 80, 128 bits & 64--256 bits & 128 bits \\
+        Structure & SPN & ARX Feistel & Sponge-Duplex \\
+        Rounds & 31/32 & 22-34 & 12 \\
+        Year & 2007 & 2013 & 2014 \\
+        Standardization & ISO/IEC 29192-2 & --- & NIST SP 800-232 \\
+        AEAD Support & No & No & Yes \\
+        \bottomrule
+    \end{tabular}
+    \caption{Design Properties Comparison of Evaluated Ciphers}
+\end{table}
+\end{frame}
+
+\begin{frame}{PRESENT}
+\vspace{-0.3cm}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\textbf{Key Properties:}
+\begin{itemize}
+    \item 64-bit SPN block cipher
+    \item 80-bit and 128-bit key options
+    \item Ultra-lightweight hardware design
+    \item Round steps: AddRoundKey, S-box, permutation
+    \item 31 rounds (PRESENT-80), 32 rounds (PRESENT-128)
+\end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth}
+\vspace{-0.5cm}
+\begin{block}{High-Level Pseudocode}
+\begin{algorithmic}
+\REQUIRE 64-bit plaintext $S$, key $K$
+\ENSURE 64-bit ciphertext $C$
+
+\STATE Generate round keys $\{K_1, \dots, K_{31}\}$
+\FOR{$i = 1$ to $31$}
+    \STATE $S \gets S \oplus K_i$
+    \STATE $S \gets \textrm{SBoxLayer}(S)$
+    \STATE $S \gets \textrm{PermLayer}(S)$
+\ENDFOR
+\STATE $C \gets S$
+\RETURN $C$
+\end{algorithmic}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{SPECK}
+\vspace{-0.3cm}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\textbf{Key Properties:}
+\begin{itemize}
+    \item Software-optimized ARX cipher
+    \item Feistel-like word-based structure
+    \item Efficient on microcontrollers
+    \item Word sizes: 16, 24, 32, 48, 64 bits
+    \item SPECK-64/128: 27 rounds
+\end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth}
+\vspace{-0.5cm}
+\begin{block}{High-Level Pseudocode}
+\begin{algorithmic}
+\REQUIRE Two $n$-bit words $(L, R)$, keys $\{K_0, \dots, K_{T-1}\}$
+\ENSURE Ciphertext $(L, R)$
+
+\FOR{$i = 0$ to $T-1$}
+    \STATE $L \gets \textrm{ROR}(L, \alpha)$
+    \STATE $L \gets (L + R) \bmod 2^n$
+    \STATE $L \gets L \oplus K_i$
+    \STATE $R \gets \textrm{ROL}(R, \beta)$
+    \STATE $R \gets R \oplus L$
+\ENDFOR
+\RETURN $(L, R)$
+\end{algorithmic}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{ASCON}
+\vspace{-0.3cm}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\textbf{Key Properties:}
+\begin{itemize}
+    \item NIST Lightweight Cryptography Standard (2025)
+    \item Sponge-duplex construction
+    \item 320-bit internal state (5 $\times$ 64-bit words)
+    \item Supports authenticated encryption and hashing
+    \item 12 rounds for permutation
+\end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth}
+\vspace{-0.5cm}
+\begin{block}{High-Level AEAD Pseudocode}
+\begin{algorithmic}
+\REQUIRE Key $K$, nonce $N$, data $A$, plaintext $P$
+\ENSURE Ciphertext $C$, tag $T$
+
+\STATE Initialize 320-bit state with $K, N$, IV
+\STATE Absorb associated data $A$ (apply $p^a$-permutation, 12 rounds)
+\STATE Encrypt: $C_i \gets \textrm{rate} \oplus P_i$
+\STATE Apply $p^b$-permutation after each block (6 rounds)
+\STATE Finalize with key injection
+\STATE Derive tag $T$ from state
+\RETURN $(C, T)$
+\end{algorithmic}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Methodology}
+
+\begin{frame}{Evaluation Criteria}
+\textbf{Performance Metrics}
+\begin{itemize}
+    \item \textbf{Execution Time}: ns per block (hardware timer on RP2040)
+    \item \textbf{Cycles Per Byte (CPB)}: Platform-independent efficiency metric
+    \item \textbf{Throughput}: Mbps for comparing operational speed
+    \item \textbf{Memory}: ROM/RAM footprint analysis
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Security Metrics}
+\begin{itemize}
+    \item Key sizes and brute-force resistance
+    \item Resistance to known cryptanalytic attacks (differential, linear, rotational)
+    \item Structural robustness of each design
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Hardware and Software Platform}
+\textbf{Hardware Environment}
+\begin{itemize}
+    \item Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM, 2 MB Flash)
+    \item Hardware timer for cycle-accurate measurements
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{Software Environment}
+\begin{itemize}
+    \item Rust \texttt{no\_std} embedded implementation
+    \item \texttt{rp2040-hal} for hardware timer access
+    \item Release mode with LTO and size optimization
+    \item \texttt{cargo-embed} for on-target debugging
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{Measurement Procedure}
+\begin{itemize}
+    \item 1000+ iterations per benchmark with warm-up runs
+    \item Interrupts disabled during critical timing sections
+    \item Cross-validation with official test vectors
+\end{itemize}
+\end{frame}
+
+\section{Results}
+
+\begin{frame}{Block Cipher Benchmarks (Raspberry Pi Pico)}
+\vspace{-0.3cm}
+\begin{table}
+    \centering
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Algorithm} & \textbf{ns/block} & \textbf{CPB} & \textbf{Mbps} \\
+        \midrule
+        PRESENT-80 & $23{,}665$ & $2{,}958$ & 0.34 \\
+        PRESENT-128 & $24{,}542$ & $3{,}068$ & 0.33 \\
+        SPECK-64/96 & 336 & 42 & 23.81 \\
+        SPECK-64/128 & 338 & 42 & 23.67 \\
+        ASCON-128 & $2{,}117$ & 132 & 7.56 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Block Cipher Benchmarks on Raspberry Pi Pico}
+\end{table}
+\vspace{0.2cm}
+\textbf{Key Finding}: SPECK achieves 23.67 Mbps -- approximately \textbf{70x faster} than PRESENT (0.34 Mbps) and \textbf{3x faster} than ASCON (7.56 Mbps).
+\end{frame}
+
+\begin{frame}{Memory Footprint}
+\vspace{-0.3cm}
+\begin{table}
+    \centering
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Cipher} & \textbf{Key} & \textbf{State} & \textbf{ROM} & \textbf{RAM} \\
+        \midrule
+        PRESENT-80 & 80 bits & 8 bytes & $\sim$2 KB & $\sim$16 B \\
+        PRESENT-128 & 128 bits & 8 bytes & $\sim$2.5 KB & $\sim$16 B \\
+        SPECK-64/96 & 96 bits & 16 bytes & $\sim$1 KB & $\sim$32 B \\
+        SPECK-64/128 & 128 bits & 16 bytes & $\sim$1.2 KB & $\sim$32 B \\
+        ASCON-128 & 128 bits & 40 bytes & $\sim$3 KB & $\sim$40 B \\
+        \bottomrule
+    \end{tabular}
+    \caption{Memory Footprint Comparison}
+\end{table}
+\vspace{0.2cm}
+\textbf{Key Finding}: SPECK has the smallest ROM footprint ($\sim$1 KB) due to ARX-only operations (no lookup tables).
+\end{frame}
+
+\begin{frame}{Block Cipher Performance Comparison}
+\vspace{-0.3cm}
+\centering
+\includegraphics[width=0.92\textwidth]{block_cipher_comparison.pdf}
+\end{frame}
+
+\begin{frame}{Mode Comparison: ECB vs CBC vs CTR}
+\vspace{-0.3cm}
+\centering
+\includegraphics[width=0.92\textwidth]{mode_comparison.pdf}
+\end{frame}
+
+\begin{frame}{ASCON Phase Breakdown}
+\vspace{-0.3cm}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\vspace{-0.5cm}
+\begin{table}
+    \centering
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Phase} & \textbf{Cycles} \\
+        \midrule
+        Initialization & 427 \\
+        Absorb (AD) & 216 \\
+        Encrypt & 464 \\
+        Finalize & 422 \\
+        \midrule
+        \textbf{Total} & \textbf{1{,}529} \\
+        \bottomrule
+    \end{tabular}
+    \caption{ASCON AEAD Phase Breakdown}
+\end{table}
+\end{column}
+\begin{column}{0.55\textwidth}
+\centering
+\includegraphics[width=1.0\textwidth]{ascon_breakdown.pdf}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Performance Summary}
+\textbf{Key Findings:}
+\begin{itemize}
+    \item \textbf{SPECK}: Best raw throughput -- optimal for bulk encryption
+    \item \textbf{ASCON}: Built-in AEAD -- recommended for security-critical IoT
+    \item \textbf{PRESENT}: Lowest hardware gate count -- suited for RFID-class devices
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Trade-off Observation}:
+ASCON's initialization overhead (427 cycles) becomes amortized at larger payload sizes,
+reducing the performance gap between SPECK and ASCON.
+\end{frame}
+
+\begin{frame}{Security Analysis}
+\begin{columns}[t]
+\begin{column}{0.32\textwidth}
+\textbf{ASCON}
+\begin{itemize}
+    \item NIST LWC Standard (SP 800-232)
+    \item 128-bit security level
+    \item Built-in AEAD support
+\end{itemize}
+\end{column}
+\begin{column}{0.32\textwidth}
+\textbf{PRESENT}
+\begin{itemize}
+    \item ISO/IEC 29192-2 standardized
+    \item 80/128-bit key options
+    \item Ultra-low gate count
+\end{itemize}
+\end{column}
+\begin{column}{0.32\textwidth}
+\textbf{SPECK}
+\begin{itemize}
+    \item No official standard
+    \item NSA origin (debated)
+    \item Confidentiality only
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Conclusion and Recommendations}
+
+\begin{frame}{Scorecard Comparison}
+\vspace{-0.3cm}
+\begin{table}
+    \centering
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Metric} & \textbf{PRESENT} & \textbf{SPECK} & \textbf{ASCON} \\
+        \midrule
+        Throughput (Mbps) & 0.34 & 23.67 & 7.56 \\
+        CPB (cycles) & $2{,}958$ & 42 & 132 \\
+        ROM (KB) & 2.5 & 1.2 & 3.0 \\
+        RAM (bytes) & 16 & 32 & 40 \\
+        Authenticated Encryption & No & No & Yes \\
+        NIST Standard & No & No & Yes (SP 800-232) \\
+        ISO Standard & Yes (29192-2) & No & No \\
+        Hardware Efficiency & Excellent & Good & Good \\
+        Software Efficiency & Poor & Excellent & Good \\
+        \bottomrule
+    \end{tabular}
+    \caption{Scorecard Comparison: PRESENT, SPECK, ASCON}
+\end{table}
+\end{frame}
+
+\begin{frame}{Use-Case Recommendations}
+\textbf{All 6 Practical Recommendations:}
+
+\vspace{0.15cm}
+\begin{enumerate}
+    \item \textbf{Real-time sensor data encryption}: SPECK-64/128 in CTR mode
+    \begin{itemize}
+        \item 23.67 Mbps throughput, 32 bytes RAM, ideal for high-bandwidth sensor streams
+    \end{itemize}
+
+    \item \textbf{Secure IoT communication with authentication}: ASCON
+    \begin{itemize}
+        \item 7.56 Mbps sufficient for most IoT, built-in AEAD, NIST standardized
+    \end{itemize}
+
+    \item \textbf{Hardware-constrained RFID tags}: PRESENT
+    \begin{itemize}
+        \item Ultra-low gate count, 0.34 Mbps adequate for low-bandwidth tag communications
+    \end{itemize}
+
+    \item \textbf{Firmware authentication}: ASCON-hash
+        \begin{itemize}
+            \item 320-bit state and 12-round permutation for anti-tampering verification
+        \end{itemize}
+
+    \item \textbf{Mixed microcontroller deployments}: SPECK + ASCON hybrid
+    \begin{itemize}
+        \item SPECK for bulk data encryption, ASCON for authentication tags
+    \end{itemize}
+
+    \item \textbf{Legacy system integration}: PRESENT-128 in CBC mode
+    \begin{itemize}
+        \item Backward compatibility with 128-bit security
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[plain]
+\begin{center}
+\Huge Thank You\\[0.8cm]
+\normalsize Rajesh Kumar Jena (B122088)\\
+Soumil Kumar (B122114)\\
+Punit Kumar (B422041)\\[0.5cm]
+\end{center}
+\end{frame}
+
+\end{document}
