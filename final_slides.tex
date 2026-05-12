@@ -235,13 +235,13 @@ This study aims to:
 \end{frame}
 
 \begin{frame}{Speedup \& Scaling Analysis}
-\vspace{-0.3cm}
-\begin{columns}
-\begin{column}{0.42\textwidth}
+\begin{columns}[T]
+\begin{column}{0.40\textwidth}
 Performance relative to ASCON:
-\vspace{0.1cm}
+\vspace{0.05cm}
 \begin{table}
 \centering
+\small
 \begin{tabular}{lccc}
 \toprule
 \textbf{Cipher} & \textbf{64B} & \textbf{256B} & \textbf{1024B} \\
@@ -254,9 +254,9 @@ PRESENT (ECB) & 0.012x & 0.010x & 0.009x \\
 \vspace{0.15cm}
 \textbf{Key Insight}: SPECK's edge narrows as ASCON's 427-cycle init overhead amortizes over larger payloads.
 \end{column}
-\begin{column}{0.58\textwidth}
+\begin{column}{0.55\textwidth}
 \centering
-\includegraphics[width=1.0\textwidth]{scaling_analysis.pdf}
+\includegraphics[width=0.9\textwidth]{scaling_analysis.pdf}
 \end{column}
 \end{columns}
 \end{frame}
