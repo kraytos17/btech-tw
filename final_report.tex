@@ -464,7 +464,7 @@ had the largest (~3 KB) to support its 320-bit state and authenticated encryptio
         PRESENT-80 & 80 bits & 64 bits & 8 bytes & 32 & $\sim$2 KB & $\sim$16 B \\
         PRESENT-128 & 128 bits & 64 bits & 8 bytes & 32 & $\sim$2.5 KB & $\sim$16 B \\
         SPECK-64/96 & 96 bits & 64 bits & 16 bytes & 26 & $\sim$1 KB & $\sim$32 B \\
-        SPECK-64/128 & 128 bits & 64 bits & 16 bytes & 32 & $\sim$1.2 KB & $\sim$32 B \\
+        SPECK-64/128 & 128 bits & 64 bits & 16 bytes & 27 & $\sim$1.2 KB & $\sim$32 B \\
         ASCON-128 & 128 bits & 64 bits & 40 bytes & 12 & $\sim$3 KB & $\sim$40 B \\
         \bottomrule
     \end{tabular}
@@ -532,13 +532,20 @@ CBC reduced SPECK throughput by 16\% on Pico compared to ECB, while CTR offered 
 balance of security (semantic security) with only 11\% overhead. Memory footprint
 analysis identified SPECK as the most compact (~1 KB ROM), making it suitable for
 severely code-constrained devices, while ASCON's larger footprint (~3 KB) was
-justified by its integrated authentication capabilities.
+justified by its integrated authentication capabilities. SPECK-64/128 achieved
+42 CPB on the Cortex-M0+, a notable improvement over the 164 CPB reported on
+8-bit AVR platforms~\cite{beaulieu2015simon}, reflecting the advantage of
+32-bit architectures for ARX-based ciphers where word-wide operations execute
+in a single cycle. SPECK-64/128 achieved
+42 CPB on the Cortex-M0+, a notable improvement over the 164 CPB reported on
+8-bit AVR platforms~\cite{beaulieu2015simon}, reflecting the advantage of
+32-bit architectures for ARX-based ciphers where word-wide operations execute
+in a single cycle.
 
 \chapter{Conclusion}
 
 Table~\ref{tab:scorecard} summarizes the key trade-offs across all evaluated ciphers.
-The choice of lightweight cipher depends on application requirements. Table~\ref{tab:scorecard}
-provides a comprehensive scorecard summary of all evaluated ciphers across key metrics.
+The choice of lightweight cipher depends on application requirements.
 
 \begin{table}[H]
     \centering
@@ -571,8 +578,14 @@ Use-case recommendations derived from empirical benchmarks:
           throughput and built-in AEAD, is recommended as the NIST-standardized choice for
           security-critical IoT deployments.
     \item \textbf{Hardware-constrained RFID tags}: PRESENT's ultra-low gate count makes it
-          the preferred choice for passive RFID tags where hardware area is the primary
-          constraint.
+           the preferred choice for passive RFID tags where hardware area is the primary
+           constraint.
+    \item \textbf{Firmware authentication}: ASCON's hashing capability (ASCON-hash) enables
+           firmware integrity verification using its 320-bit state and 12-round permutation.
+    \item \textbf{Hybrid deployments}: SPECK for bulk data encryption combined with ASCON
+           for authentication tags offers a flexible solution for mixed-requirement systems.
+    \item \textbf{Legacy system integration}: PRESENT-128 in CBC mode maintains backward
+           compatibility with existing deployments while providing 128-bit security.
 \end{itemize}
 
 Algorithm selection in embedded systems must align with specific application needs and

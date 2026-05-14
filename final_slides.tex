@@ -99,37 +99,39 @@ This study aims to:
 \end{table}
 \end{frame}
 
-\begin{frame}{PRESENT}
-\textbf{Key Properties:}
+\begin{frame}{Algorithm Overview}
+\begin{columns}[t]
+\begin{column}{0.33\textwidth}
+\centering\textbf{PRESENT}
 \begin{itemize}
-    \item 64-bit SPN block cipher, 80/128-bit keys
-    \item ~1,570 GE gate count -- among the most compact ciphers
-    \item Round steps: AddRoundKey, 16 $\times$ 4-bit S-box layer, bit permutation
-    \item 31 rounds (PRESENT-80), 32 rounds (PRESENT-128)
-    \item Standardized in ISO/IEC 29192-2
+    \item 64-bit SPN cipher
+    \item 80/128-bit keys
+    \item 31/32 rounds
+    \item $\sim$1{,}570 GE gate count
+    \item ISO/IEC 29192-2
 \end{itemize}
-\end{frame}
-
-\begin{frame}{SPECK}
-\textbf{Key Properties:}
+\end{column}
+\begin{column}{0.33\textwidth}
+\centering\textbf{SPECK}
 \begin{itemize}
-    \item ARX-based Feistel-like structure (add, rotate, XOR only)
-    \item Highly efficient on microcontrollers
-    \item Word sizes: 16, 24, 32, 48, 64 bits
-    \item SPECK-64/128: 27 rounds, $\alpha = 7, \beta = 2$ rotation constants
-    \item Fastest lightweight cipher in software benchmarks
+    \item ARX Feistel structure
+    \item 64--256-bit keys
+    \item 27 rounds (64/128)
+    \item Fastest in software
+    \item No standard
 \end{itemize}
-\end{frame}
-
-\begin{frame}{ASCON}
-\textbf{Key Properties:}
+\end{column}
+\begin{column}{0.33\textwidth}
+\centering\textbf{ASCON}
 \begin{itemize}
-    \item NIST Lightweight Cryptography Standard (SP 800-232, 2023)
-    \item Sponge-duplex construction, 320-bit internal state
-    \item Built-in authenticated encryption and hashing (AEAD)
-    \item Two permutation variants: $p^a$ (12 rounds) and $p^b$ (6 rounds)
-    \item 64-bit rate / 256-bit capacity -- provides 128-bit security
+    \item Sponge-duplex AEAD
+    \item 128-bit key
+    \item 12 rounds ($p^a$, $p^b$)
+    \item NIST SP 800-232
+    \item AEAD + hashing
 \end{itemize}
+\end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Platform \& Evaluation Metrics}
@@ -299,19 +301,29 @@ PRESENT (ECB) & 0.012x & 0.010x & 0.009x \\
 
 \begin{frame}{Use-Case Recommendations}
 \begin{enumerate}
-    \item \textbf{Real-time sensor data encryption}: SPECK-64/128 in CTR mode
+    \item \textbf{Real-time sensor data}: SPECK-64/128 in CTR mode
     \begin{itemize}
-        \item 23.67 Mbps, 32 bytes RAM, ideal for high-bandwidth sensor streams
+        \item 23.67 Mbps, 32 B RAM, for high-bandwidth sensor streams
     \end{itemize}
-
-    \item \textbf{Secure IoT communication with authentication}: ASCON
+    \item \textbf{Secure IoT with auth}: ASCON
     \begin{itemize}
-        \item 7.56 Mbps, built-in AEAD, NIST standardized (SP 800-232)
+        \item 7.56 Mbps, AEAD, NIST standardized
     \end{itemize}
-
-    \item \textbf{Hardware-constrained RFID tags}: PRESENT
+    \item \textbf{RFID tags}: PRESENT
     \begin{itemize}
-        \item Ultra-low gate count, 0.34 Mbps adequate for low-bandwidth communications
+        \item Ultra-low gate count, adequate for low-bandwidth comms
+    \end{itemize}
+    \item \textbf{Firmware authentication}: ASCON-hash
+    \begin{itemize}
+        \item 320-bit state, 12-round permutation for anti-tampering
+    \end{itemize}
+    \item \textbf{Hybrid deployment}: SPECK + ASCON
+    \begin{itemize}
+        \item SPECK for bulk data, ASCON for auth tags
+    \end{itemize}
+    \item \textbf{Legacy integration}: PRESENT-128 in CBC mode
+    \begin{itemize}
+        \item Backward compatibility with 128-bit security
     \end{itemize}
 \end{enumerate}
 \end{frame}
