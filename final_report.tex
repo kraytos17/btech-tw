@@ -65,8 +65,7 @@
 \noindent Certified that the report entitled ``Comparison of Lightweight Encryption Algorithms,''
 submitted by Rajesh Kumar Jena (B122088), Soumil Kumar (B122114), and Punit Kumar (B422041)
 to the International Institute of Information Technology, Bhubaneswar, in partial fulfillment
-of the B.Tech programme requirements for the award of the Bachelor of Technology under the
-B.Tech Programme, has been accepted by the examiners during the viva voce examination held today.
+of the B.Tech programme requirements for the award of the Bachelor of Technology, has been accepted by the examiners during the viva voce examination held today.
 
 \vfill
 
@@ -160,15 +159,13 @@ ASCON, IoT security, performance evaluation, Raspberry Pi Pico, Rust
 \newpage
 \tableofcontents
 
-\newpage
+\begingroup
+\let\clearpage\relax
 \listoftables
-
-\newpage
 \listoffigures
-
-\newpage
 \chapter*{List of Abbreviations}
 \addcontentsline{toc}{chapter}{List of Abbreviations}
+\endgroup
 
 \begin{tabular}{lp{12cm}}
 \toprule
@@ -201,6 +198,33 @@ SPN & Substitution-Permutation Network \\
 \phantomsection
 \addcontentsline{toc}{chapter}{Introduction}
 \chapter{Introduction}
+
+\section{Historical Context}
+
+Cryptography has evolved through several distinct eras, each driven by the
+constraints of its time. Early manual ciphers---such as the Caesar cipher,
+the Vigen\`ere cipher, and the Enigma machine---relied on simple
+substitution and transposition operations feasible by hand or with
+mechanical assistance~\cite{singh2000codebook}. The advent of digital
+computing in the mid-20th century enabled far stronger encryption, leading
+to standardized algorithms such as the Data Encryption Standard (DES) in
+1977 and the Advanced Encryption Standard (AES) in 2001~\cite{nist2001aes}.
+These algorithms were designed for desktop and server-class hardware with
+ample computational resources.
+
+The proliferation of the Internet of Things (IoT) introduced a new class
+of devices---microcontrollers with limited processing power, memory, and
+energy budgets---for which traditional algorithms proved impractical.
+AES, while extremely secure, requires significant memory for its
+S-box tables and performs poorly on 8-bit and low-end 32-bit processors
+without hardware acceleration. This gap motivated the development of
+\textit{lightweight cryptography}: algorithms engineered specifically for
+constrained environments while maintaining practical security levels.
+Standards bodies responded accordingly: ISO/IEC standardized PRESENT
+as ISO/IEC 29192-2 in 2019, and NIST selected ASCON as the Lightweight
+Cryptography Standard (SP 800-232) in 2023~\cite{iso29192,nist2025ascon},
+marking the formal recognition of lightweight primitives in the
+cryptographic landscape.
 
 \section{Motivation: Computing at the Edge}
 
@@ -258,6 +282,72 @@ RP2040 platform using Rust implementations. This study fills that gap, contribut
 (ii) empirical performance data across block cipher, mode, and payload-size dimensions,
 and (iii) practical deployment recommendations based on measured trade-offs.
 
+\chapter{Literature Survey}
+
+\section{Evolution of Lightweight Cryptography}
+
+The need for lightweight cryptographic primitives was first articulated in
+the early 2000s as RFID tags and sensor networks began to proliferate.
+Traditional block ciphers such as AES, while offering strong security,
+require 2,500--3,000 gate equivalents (GE) for a hardware implementation,
+exceeding the $\sim$2,000 GE budget typical of passive RFID tags~\cite{mckay2017nist}.
+This motivated the development of dedicated lightweight designs.
+
+The first generation of lightweight ciphers emerged between 2007 and 2013,
+led by PRESENT~\cite{bogdanov2007present} and the NSA-designed SIMON/SPECK
+family~\cite{beaulieu2015simon}. These focused primarily on block cipher
+primitives with reduced gate counts and simplified round functions.
+PRESENT achieved approximately 1,570 GE---nearly half the cost of AES---by
+using a 4-bit S-box and a bit-permutation layer implementable as simple
+wire crossings in hardware. SPECK targeted a complementary niche: software
+efficiency on general-purpose microcontrollers, using only ARX operations
+that map efficiently to most instruction sets.
+
+The second generation, marked by ASCON's submission to the CAESAR
+competition in 2014~\cite{dobraunig2016ascon}, shifted focus toward
+authenticated encryption (AEAD) rather than standalone encryption.
+This reflected the practical reality that most IoT deployments require
+both confidentiality and integrity. ASCON's sponge-duplex construction
+provides both in a single primitive, unlike PRESENT and SPECK which
+require a separate MAC or hash for authentication. In 2023, NIST
+formalized this evolution by selecting ASCON as the Lightweight
+Cryptography Standard (SP 800-232)~\cite{nist2025ascon}, cementing
+its role as the recommended AEAD primitive for constrained devices.
+
+The NIST lightweight cryptography standardization process, initiated in
+2015 with the publication of NISTIR 8114~\cite{mckay2017nist}, evaluated
+57 candidate algorithms across multiple dimensions including security,
+performance, and implementation cost. After a multi-round selection
+process involving hardware and software benchmarking, ASCON was announced
+as the winner in February 2023 and subsequently published as NIST SP
+800-232 in 2025. This process established a rigorous framework for
+evaluating lightweight primitives and provided the cryptographic
+community with a standardized benchmark for future designs.
+
+\section{Prior Benchmarking Studies}
+
+Several studies have benchmarked lightweight ciphers on embedded platforms
+prior to this work. Beaulieu et al.~\cite{beaulieu2015simon} reported
+SPECK-64/128 performance on 8-bit AVR microcontrollers at 164 cycles per
+byte, demonstrating the cipher's suitability for low-end platforms. On
+32-bit ARM Cortex-M3 processors, SPECK-128/128 achieved approximately
+16 CPB, benefiting from the wider datapath.
+
+The NISTIR 8114 report~\cite{mckay2017nist} surveyed a broad range of
+lightweight candidates across multiple platforms, providing a comprehensive
+comparison of throughput, memory, and security properties. That survey
+identified PRESENT as the most hardware-efficient option but noted its
+poor software performance, and highlighted the need for more benchmarking
+on contemporary microcontrollers such as the ARM Cortex-M0+ family.
+
+Other notable studies include the ISO/IEC standardization of PRESENT
+(ISO/IEC 29192-2:2019)~\cite{iso29192} and the ongoing cryptanalysis
+of the SPECK family~\cite{ashur2018simon}, which have established
+confidence in the security margins of these algorithms. However, no
+prior study has provided a side-by-side comparison of PRESENT, SPECK,
+and ASCON on the RP2040 platform using Rust implementations, which
+is the gap addressed by this work.
+
 \chapter{Experimental Methodology}
 
 \section{Algorithms Evaluated}
@@ -295,7 +385,30 @@ $2^{-2}$, providing provable security bounds over the full 31 rounds.
 SPECK is a family of Add-Rotate-XOR (ARX)-based block ciphers optimized for software efficiency on
 microcontrollers~\cite{beaulieu2015simon}. Its Feistel-like structure uses only add, rotate,
 and XOR operations on two $n$-bit words per round, with rotation constants $\alpha$ and
-$\beta$ varying by variant (e.g., $\alpha = 7, \beta = 2$ for the 64-bit block variants).
+$\beta$ varying by variant. The SPECK family encompasses multiple block and key sizes,
+each with specific rotation parameters and round counts:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Variant} & \textbf{Block size} & \textbf{Key size} & \textbf{Rounds} & \textbf{$\alpha$, $\beta$} \\
+        \midrule
+        SPECK-32/64 & 32 & 64 & 22 & 7, 2 \\
+        SPECK-48/72 & 48 & 72 & 22 & 8, 3 \\
+        SPECK-48/96 & 48 & 96 & 23 & 8, 3 \\
+        SPECK-64/96 & 64 & 96 & 26 & 7, 2 \\
+        SPECK-64/128 & 64 & 128 & 27 & 7, 2 \\
+        SPECK-96/144 & 96 & 144 & 28 & 8, 3 \\
+        SPECK-96/192 & 96 & 192 & 29 & 8, 3 \\
+        SPECK-128/192 & 128 & 192 & 30 & 8, 3 \\
+        SPECK-128/256 & 128 & 256 & 34 & 8, 3 \\
+        \bottomrule
+    \end{tabular}
+    \caption{SPECK family parameter set for all block and key size variants}
+    \label{tab:speck-params}
+\end{table}
+
 This design makes it one of the fastest lightweight ciphers in software. Despite
 scrutiny regarding its NSA origin and ISO rejection~\cite{ashur2018simon}, SPECK remains
 widely studied and deployed due to its exceptional software performance.
@@ -308,7 +421,18 @@ ASCON is a sponge-duplex Authenticated Encryption with Associated Data (AEAD) sc
 (five 64-bit words), selected as the National Institute of Standards and Technology (NIST) Lightweight Cryptography Standard (SP 800-232)
 in 2023~\cite{dobraunig2016ascon,nist2025ascon}. It uses two permutation variants:
 $p^a$ (12 rounds) for initialization and finalization, and $p^b$ (6 rounds) for intermediate
-processing. The 64-bit rate and 256-bit capacity split provides 128-bit security while
+processing. Each permutation round operates on the 320-bit state $S = S_0 \| S_1 \| S_2 \| S_3 \| S_4$
+through three steps:
+\begin{enumerate}
+    \item \textbf{Add constants}: the round constant $c_r$ is XORed into $S_2$,
+    \item \textbf{Substitution layer}: 64 parallel 5-bit S-boxes are applied across the five
+          64-bit words using a diffusion-optimized mapping,
+    \item \textbf{Diffusion layer}: a linear transformation based on
+          $\Sigma$-type shifts (right-rotate by 19 and 28 for word $S_0$, by 61 and 39 for
+          $S_1$, by 1 and 6 for $S_2$, by 10 and 17 for $S_3$, and by 7 and 41 for $S_4$)
+          ensures full-state diffusion within a small number of rounds.
+\end{enumerate}
+The 64-bit rate and 256-bit capacity split provides 128-bit security while
 enabling built-in authenticated encryption and hashing in a single primitive,
 suitable for security-critical IoT deployments.
 The 256-bit capacity provides 128-bit security with proven
@@ -335,6 +459,35 @@ All experiments used Rust (\texttt{no\_std}) on a Raspberry Pi Pico (ARM Cortex-
 264 KB SRAM, 2 MB Flash), with \texttt{rp2040-hal} for hardware timer access and
 \texttt{probe-rs}/\texttt{cargo-embed} for debugging. Build configuration: release mode with LTO
 and size optimization.
+
+\subsection*{Rust Implementation Details}
+
+Each cipher was implemented as a standalone Rust crate targeting the
+\texttt{thumbv6m-none-eabi} target triple (ARM Cortex-M0+). The
+implementations follow a common interface: a \texttt{BlockCipher} trait
+with \texttt{encrypt\_block()} and \texttt{decrypt\_block()} methods,
+enabling drop-in benchmarking across algorithms.
+
+For PRESENT, the 4-bit S-box was implemented as a 16-entry lookup table
+(\texttt{const} array in ROM), and the bit-permutation layer was
+implemented using bitwise shift-and-mask operations across the two
+32-bit halves of the 64-bit state. The key schedule for PRESENT-80
+and PRESENT-128 was computed on-the-fly during encryption to minimize
+RAM usage.
+
+SPECK's ARX round function was implemented using Rust's native
+\texttt{rotate\_left()}, \texttt{rotate\_right()}, \texttt{wrapping\_add()},
+and \texttt{xor} operators, which the LLVM backend compiles directly to
+single-cycle ARM \texttt{RORS}, \texttt{ROLS}, \texttt{ADDS}, and
+\texttt{EORS} instructions. The round keys were precomputed and stored
+in a fixed-size array on the stack.
+
+ASCON's 320-bit state was represented as a \texttt{[u64; 5]} array.
+The substitution layer uses a 5-bit S-box implemented via bit-slicing
+techniques, and the diffusion layer applies cyclic rotations on each
+64-bit word. The two permutation variants ($p^a$ with 12 rounds and
+$p^b$ with 6 rounds) share the same round function, differing only
+in the number of iterations.
 
 Benchmarking procedure: hardware timer for cycle-accurate timing; minimum 1000 iterations with
 warm-up runs; single-block and multi-block measurements; ASCON phases (init, absorb, encrypt,
@@ -395,6 +548,13 @@ identical performance, indicating minimal key-size impact on throughput.
     \label{fig:block-cipher-comparison}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{mode_comparison.pdf}
+    \caption{Mode Comparison: ECB vs CBC vs CTR Performance}
+    \label{fig:mode-comparison}
+\end{figure}
+
 
 \subsection{Mode Comparison}
 
@@ -452,8 +612,8 @@ at 464 cycles, and finalize (422 cycles) generated the authentication tag.
 \section{Memory Footprint Analysis}
 
 Table~\ref{tab:memory-footprint} summarizes the memory characteristics of all implemented ciphers.
-SPECK had the smallest ROM (~1 KB) due to ARX-only operations with no lookup tables, while ASCON
-had the largest (~3 KB) to support its 320-bit state and authenticated encryption.
+SPECK had the smallest ROM ($\sim$1 KB) due to ARX-only operations with no lookup tables, while ASCON
+had the largest ($\sim$3 KB) to support its 320-bit state and authenticated encryption.
 
 \begin{table}[H]
     \centering
@@ -484,7 +644,7 @@ SPECK with ECB mode achieved the best performance, approximately 1.2--1.3x faste
 at small payload sizes (64B). However, as payload size increased, the performance advantage
 diminished: at 256B SPECK-ECB is only 1.08x faster, and at 1024B the advantage is nearly
 negligible (1.03x). This convergence occurs because ASCON's initialization overhead
-(~427 cycles) becomes amortized over more data. Notably, ASCON-hash is
+($\sim$427 cycles) becomes amortized over more data. Notably, ASCON-hash is
 approximately 1.6x slower than ASCON-AEAD (speedup 0.61x). This is because
 hashing uses the full $p^a$ permutation (12 rounds) for every data block,
 whereas AEAD uses the lighter $p^b$ permutation (6 rounds) for intermediate
@@ -518,29 +678,96 @@ Figure~\ref{fig:scaling-analysis}.
     \label{fig:scaling-analysis}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{combined_comparison.png}
+    \caption{Performance Comparison: PRESENT, SPECK, ASCON on Raspberry Pi Pico}
+    \label{fig:combined-comparison}
+\end{figure}
+
 \section{Discussion}
 
 The benchmark results revealed a clear performance hierarchy: SPECK dominated raw throughput
 (23.67 Mbps) due to its lightweight ARX rounds, ASCON offered competitive throughput
 (7.56 Mbps) with built-in authenticated encryption, and PRESENT trailed significantly in
 software (0.34 Mbps) but remains relevant for hardware-constrained deployments. The
-speedup analysis showed that ASCON's initialization overhead (~427 cycles) was quickly
+speedup analysis showed that ASCON's initialization overhead ($\sim$427 cycles) was quickly
 amortized, narrowing the gap with SPECK at larger payloads. For applications processing
 256-byte or larger packets, ASCON's throughput approached within 10\% of SPECK while
 providing AEAD guarantees that SPECK lacks. Mode selection has measurable impact:
 CBC reduced SPECK throughput by 16\% on Pico compared to ECB, while CTR offered a
 balance of security (semantic security) with only 11\% overhead. Memory footprint
-analysis identified SPECK as the most compact (~1 KB ROM), making it suitable for
-severely code-constrained devices, while ASCON's larger footprint (~3 KB) was
+analysis identified SPECK as the most compact ($\sim$1 KB ROM), making it suitable for
+severely code-constrained devices, while ASCON's larger footprint ($\sim$3 KB) was
 justified by its integrated authentication capabilities. SPECK-64/128 achieved
 42 CPB on the Cortex-M0+, a notable improvement over the 164 CPB reported on
 8-bit AVR platforms~\cite{beaulieu2015simon}, reflecting the advantage of
 32-bit architectures for ARX-based ciphers where word-wide operations execute
-in a single cycle. SPECK-64/128 achieved
-42 CPB on the Cortex-M0+, a notable improvement over the 164 CPB reported on
-8-bit AVR platforms~\cite{beaulieu2015simon}, reflecting the advantage of
-32-bit architectures for ARX-based ciphers where word-wide operations execute
 in a single cycle.
+
+\subsection*{Architectural Analysis}
+
+The three ciphers' performance characteristics on the Cortex-M0+ can be
+explained by their structural design. SPECK's ARX round function maps
+directly to the ARM instruction set: modular addition (\texttt{ADDS}),
+bitwise rotation (\texttt{RORS}, \texttt{ROLS}), and XOR (\texttt{EORS})
+each execute in a single cycle. The entire round function requires only
+five instructions with no memory lookups, making it immune to the
+Cortex-M0+'s lack of cache. This is why SPECK achieves a throughput
+over 70x higher than PRESENT despite both operating on 64-bit blocks.
+
+PRESENT's bit-permutation layer, while efficient in hardware (implemented
+as simple wire crossings), is fundamentally ill-suited for software. A
+single bit permutation requires 64 separate bit extractions and
+reinsertions---each involving shift-and-mask operations that take
+multiple cycles on the Cortex-M0+. Combined with the S-box lookups
+(which, while compact, still require indexed memory access), the
+31 rounds of PRESENT result in CPB values $\sim$70x higher than SPECK.
+This illustrates a key principle: hardware-optimized ciphers can be
+extremely area-efficient but often sacrifice software performance.
+
+ASCON occupies a middle ground. Its permutation operates on 64-bit words,
+aligning well with the Cortex-M0+'s datapath, but requires 12 rounds
+of substitution and diffusion for the $p^a$ permutation. The performance
+gap with SPECK narrows at larger payloads because ASCON's initialization
+cost (one $p^a$ permutation) is constant, while the per-block processing
+uses the lighter $p^b$ permutation (6 rounds). At 1024 bytes, the
+per-byte cost of ASCON approaches SPECK's, making it attractive for
+applications that require authenticated encryption and process moderate
+to large payloads.
+
+\subsection*{Security Analysis}
+
+The three ciphers provide different security guarantees that must be
+considered alongside their performance characteristics. ASCON offers
+the strongest modern security posture: it is the NIST Lightweight
+Cryptography Standard (SP 800-232), provides 128-bit security with
+proven indifferentiability bounds for its sponge-duplex construction,
+and has undergone extensive cryptanalysis with no significant attacks
+on the full 12-round permutation~\cite{dobraunig2016ascon,nist2025ascon}.
+Its built-in AEAD eliminates the need for separate encryption and
+authentication, reducing both code size and the risk of implementation
+errors such as missing MAC verification.
+
+PRESENT provides provable security bounds through its SPN design: the
+4-bit S-box has a maximum differential probability of $2^{-2}$ and
+maximum linear bias of $2^{-2}$, guaranteeing resistance to differential
+and linear cryptanalysis over the full 31 rounds~\cite{bogdanov2007present}.
+Its ISO/IEC standardization (29192-2:2019) provides regulatory confidence
+for long-term deployments~\cite{iso29192}. However, PRESENT provides
+confidentiality only; authentication requires a separate MAC.
+
+SPECK's security is less formally established. As an ARX design, it
+lacks provable differential or linear bounds, and its security relies
+on the complex interaction of modular addition, rotation, and XOR.
+Best published attacks reduce up to 20 of 27 rounds for SPECK-64/128,
+leaving a practical but reduced security margin~\cite{ashur2018simon}.
+Additionally, SPECK's NSA origin has led to scrutiny and its rejection
+from ISO/IEC standardization, which may be a concern for regulated
+deployments. Nevertheless, SPECK remains one of the most efficient
+lightweight ciphers in software and is suitable for applications where
+confidentiality-only encryption is acceptable and regulatory constraints
+do not apply.
 
 \chapter{Conclusion}
 
@@ -592,6 +819,18 @@ Algorithm selection in embedded systems must align with specific application nee
 deployment constraints. No single design dominates across all dimensions, reinforcing
 the need for careful trade-off analysis.
 
+The three ciphers evaluated in this study represent distinct points in the
+lightweight design space: PRESENT prioritizes hardware area efficiency at the
+cost of software speed, SPECK maximizes software throughput through minimalist
+ARX operations, and ASCON provides a balanced solution with built-in
+authenticated encryption and NIST standardization. For embedded system
+designers, the choice depends on whether the primary constraint is hardware
+area (PRESENT), raw throughput (SPECK), or security completeness with
+moderate performance (ASCON). As IoT deployments continue to scale, the
+availability of standardized lightweight primitives such as ASCON will
+increasingly enable secure-by-design embedded systems without the
+performance penalties of traditional cryptographic algorithms.
+
 \subsection*{Limitations}
 This study has several limitations. Benchmarks were conducted on a single platform
 (Raspberry Pi Pico) using software-only implementations; hardware-optimized or
@@ -640,6 +879,13 @@ All implementations passed these test vectors, confirming correct encryption, de
 \newpage
 \begin{thebibliography}{99}
 
+    \bibitem{singh2000codebook}
+    Simon Singh, \textit{The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography}. Anchor Books, 2000.
+
+    \bibitem{nist2001aes}
+    National Institute of Standards and Technology, ``Advanced Encryption Standard (AES),'' FIPS PUB 197, 2001.
+    \url{https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf}
+
     \bibitem{bogdanov2007present}
     A. Bogdanov, L. R. Knudsen, G. Leander, C. Paar, A. Poschmann, M. J. B. Robshaw, Y. Seurin, and C. Vikkelsoe, ``PRESENT: An Ultra-Lightweight Block Cipher,'' in \textit{Proceedings of CHES 2007}, LNCS 4727, pp. 450--466, Springer, 2007.
     \url{https://link.springer.com/chapter/10.1007/978-3-540-74735-2_31}
@@ -663,10 +909,6 @@ All implementations passed these test vectors, confirming correct encryption, de
     \bibitem{al2015iot}
     S. Al-Sarawi, M. Anbar, K. Alieyan, and M. Alzubaidi, ``Internet of Things (IoT) Communication Protocols: Review,'' in \textit{2017 8th International Conference on Information Technology (ICIT)}, 2017.
     \url{https://ieeexplore.ieee.org/document/8079928}
-
-    \bibitem{raspberry2021pico}
-    Raspberry Pi Foundation, ``Raspberry Pi Pico Datasheet,'' 2021.
-    \url{https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf}
 
     \bibitem{ashur2018simon}
     T. Ashur and B. Rijmen, ``An Account of the ISO/IEC Standardization of the Simon and Speck Block Cipher Families,'' in \textit{Tatra Mountains Mathematical Publications}, vol. 73, pp. 49--58, 2019.
