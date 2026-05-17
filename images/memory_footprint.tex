@@ -1,0 +1,15 @@
+\begin{table}
+\caption{Memory Footprint Comparison}
+\label{tab:memory}
+\begin{tabular}{@{}lccccr@{}}
+\toprule
+Cipher & Key Size & Block Size & Rounds & ROM (est.) & RAM (est.) \\
+\midrule
+PRESENT-80 & 80 bits (10 bytes) & 64 bits (8 bytes) & 32 & \textasciitilde 1.8 KB & \textasciitilde 24 bytes \\
+PRESENT-128 & 128 bits (16 bytes) & 64 bits (8 bytes) & 32 & \textasciitilde 2.2 KB & \textasciitilde 24 bytes \\
+SPECK-64/96 & 96 bits (12 bytes) & 64 bits (8 bytes) & 26 & \textasciitilde 0.9 KB & \textasciitilde 28 bytes \\
+SPECK-64/128 & 128 bits (16 bytes) & 64 bits (8 bytes) & 32 & \textasciitilde 1.1 KB & \textasciitilde 32 bytes \\
+ASCON-AEAD128 & 128 bits (16 bytes) & 64 bits (8 bytes) & 12 (AEAD) / 6 (hash) & \textasciitilde 3.2 KB & \textasciitilde 48 bytes \\
+\bottomrule
+\end{tabular}
+\end{table}

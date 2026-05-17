@@ -53,18 +53,18 @@ Supervisor: Prof. Debasish Jena
 \section{Introduction}
 
 \begin{frame}{Motivation and Problem Statement}
-\textbf{Context}
+\textbf{Historical Context}
 \begin{itemize}
-    \item IoT deployments require cryptography on devices with limited CPU, memory, and energy
-    \item Conventional algorithms (AES, RSA, ECC) often exceed microcontroller resource limits
-    \item The Mirai botnet attack highlighted risks of insecure embedded systems
+    \item DES (1977) $\rightarrow$ AES (2001): Evolved for desktop/server computing
+    \item IoT devices: constrained CPU, memory, power — traditional algorithms impractical
+    \item Mirai botnet (2016): Exploited insecure embedded devices --- millions hijacked
 \end{itemize}
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 \textbf{Problem}
 \begin{itemize}
-    \item Developers sometimes deploy weakened or ad hoc security mechanisms
-    \item Lightweight cryptography provides efficient alternatives for constrained platforms
+    \item Developers deploy weakened or ad hoc security
+    \item Lightweight cryptography: efficient primitives for constrained platforms
     \item Need to balance security, performance, and implementation cost
 \end{itemize}
 \end{frame}
@@ -72,7 +72,7 @@ Supervisor: Prof. Debasish Jena
 \begin{frame}{Objectives \& Contributions}
 This study aims to:
 \begin{itemize}
-    \item Evaluate PRESENT, SPECK, and ASCON on a Raspberry Pi Pico (ARM Cortex-M0+)
+    \item Evaluate PRESENT, SPECK, and ASCON on Raspberry Pi Pico (ARM Cortex-M0+)
     \item Compare execution time, memory usage, and throughput
     \item Identify design trade-offs for constrained embedded environments
 \end{itemize}
@@ -80,18 +80,17 @@ This study aims to:
 \vspace{0.2cm}
 \textbf{Contributions:}
 \begin{itemize}
-    \item Reproducible Rust-based benchmarking framework for the RP2040
+    \item Reproducible Rust-based benchmarking framework for RP2040
     \item Empirical data across block cipher, mode, and payload-size dimensions
     \item Practical deployment recommendations based on measured trade-offs
 \end{itemize}
 \end{frame}
 
 
-
 \section{Experimental Methodology}
 
-\begin{frame}{Design Properties Comparison}
-\vspace{-0.2cm}
+\begin{frame}{Algorithms: Design Properties}
+\vspace{-0.4cm}
 \begin{table}
     \centering
     \begin{tabular}{lccc}
@@ -102,76 +101,36 @@ This study aims to:
         Key Sizes & 80, 128 bits & 64--256 bits & 128 bits \\
         Structure & SPN & ARX Feistel & Sponge-Duplex \\
         Rounds & 31/32 & 22-34 & 12 \\
-        Year & 2007 & 2013 & 2014 \\
-        Standardization & ISO/IEC 29192-2 & --- & NIST SP 800-232 \\
+        Standardization & ISO 29192-2 & --- & NIST SP 800-232 \\
         AEAD Support & No & No & Yes \\
         \bottomrule
     \end{tabular}
-    \caption{Design Properties Comparison of Evaluated Ciphers}
 \end{table}
-\end{frame}
-
-\begin{frame}{Algorithm Overview}
-\begin{columns}[t]
-\begin{column}{0.33\textwidth}
-\centering\textbf{PRESENT}
-\begin{itemize}
-    \item 64-bit SPN cipher
-    \item 80/128-bit keys
-    \item 31/32 rounds
-    \item $\sim$1{,}570 GE gate count
-    \item ISO/IEC 29192-2
-\end{itemize}
-\end{column}
-\begin{column}{0.33\textwidth}
-\centering\textbf{SPECK}
-\begin{itemize}
-    \item ARX Feistel structure
-    \item 64--256-bit keys
-    \item 27 rounds (64/128)
-    \item Fastest in software
-    \item No standard
-\end{itemize}
-\end{column}
-\begin{column}{0.33\textwidth}
-\centering\textbf{ASCON}
-\begin{itemize}
-    \item Sponge-duplex AEAD
-    \item 128-bit key
-    \item 12 rounds ($p^a$, $p^b$)
-    \item NIST SP 800-232
-    \item AEAD + hashing
-\end{itemize}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Platform \& Evaluation Metrics}
-\textbf{Hardware}: Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM, 2 MB Flash)
 
 \vspace{0.15cm}
-\textbf{Software}: Rust \texttt{no\_std}, \texttt{rp2040-hal}, release mode with LTO
-
-\vspace{0.15cm}
-\textbf{Metrics:}
+\textbf{Key Differentiators}:
 \begin{itemize}
-    \item \textbf{Execution Time}: hardware timer, interrupts disabled
-    \item \textbf{Cycles Per Byte}: $\textit{CPB} = \frac{\textit{total cycles}}{\textit{total bytes}}$
-    \item \textbf{Throughput}: Mbps from fixed-size buffer encryption
-    \item \textbf{Memory}: ROM (binary size) + RAM (state/buffer analysis)
+    \item \textbf{PRESENT}: $\sim$1,570 GE (hardware-optimized)
+    \item \textbf{SPECK}: 42 CPB (software fastest)
+    \item \textbf{ASCON}: AEAD + hashing built-in
 \end{itemize}
+\end{frame}
+
+\begin{frame}{Platform \& Metrics}
+\textbf{Hardware}: Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM)
 
 \vspace{0.15cm}
-\textbf{Procedure}: 1000+ iterations, warm-up runs, cross-validated with test vectors
+\textbf{Metrics}: Throughput (Mbps), Cycles/Byte, ROM footprint, RAM usage
+
+\vspace{0.15cm}
+\textbf{Procedure}: 1000+ iterations, hardware timer, test vector validation
 \end{frame}
+
 
 \section{Results}
 
-\begin{frame}{Block Cipher Benchmarks (Raspberry Pi Pico)}
+\begin{frame}{Block Cipher Benchmarks}
 \vspace{-0.3cm}
-\begin{columns}
-\begin{column}{0.48\textwidth}
-\vspace{-0.4cm}
 \begin{table}
     \centering
     \begin{tabular}{lrr}
@@ -188,12 +147,18 @@ This study aims to:
 \end{table}
 \vspace{0.1cm}
 \textbf{Key Finding}: SPECK is \textbf{70x faster} than PRESENT and \textbf{3x faster} than ASCON.
-\end{column}
-\begin{column}{0.52\textwidth}
-\centering
-\includegraphics[width=1.0\textwidth]{block_cipher_comparison.pdf}
-\end{column}
-\end{columns}
+\end{frame}
+
+\begin{frame}{Why This Performance Gap?}
+\textbf{Architectural Explanation:}
+\begin{itemize}
+    \item \textbf{SPECK (ARX)}: Add, Rotate, XOR $\rightarrow$ single-cycle ARM instructions (\texttt{ADDS}, \texttt{RORS}, \texttt{EORS}) — no memory lookups
+    \item \textbf{PRESENT (SPN)}: Bit-permutation requires 64 separate bit extractions/reinsertions per round — 31 rounds (PRESENT-80) / 32 rounds (PRESENT-128) = 70x overhead
+    \item \textbf{ASCON (Sponge)}: 64-bit words align with Cortex-M0+ datapath, but 12-round $p^a$ permutation is heavier than SPECK's 5-instruction round
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{Bottom Line}: Hardware-optimized ciphers (PRESENT) sacrifice software performance; software-optimized ciphers (SPECK) exploit architectural fit.
 \end{frame}
 
 \begin{frame}{Memory Footprint}
@@ -211,19 +176,15 @@ This study aims to:
         ASCON-128 & 128 bits & 40 bytes & $\sim$3 KB & $\sim$40 B \\
         \bottomrule
     \end{tabular}
-    \caption{Memory Footprint Comparison}
 \end{table}
 \vspace{0.2cm}
-\textbf{Key Finding}: SPECK has the smallest ROM footprint ($\sim$1 KB) due to ARX-only operations (no lookup tables).
+\textbf{SPECK}: Smallest ROM ($\sim$1 KB) — ARX-only ops, no lookup tables
 \end{frame}
-
-
 
 \begin{frame}{ASCON Phase Breakdown}
 \vspace{-0.3cm}
 \begin{columns}
 \begin{column}{0.45\textwidth}
-\vspace{-0.5cm}
 \begin{table}
     \centering
     \begin{tabular}{lr}
@@ -238,55 +199,65 @@ This study aims to:
         \textbf{Total} & \textbf{1{,}529} \\
         \bottomrule
     \end{tabular}
-    \caption{ASCON AEAD Phase Breakdown}
 \end{table}
 \end{column}
-\begin{column}{0.55\textwidth}
+\begin{column}{0.50\textwidth}
 \centering
-\includegraphics[width=1.0\textwidth]{ascon_breakdown.pdf}
+\includegraphics[width=1.0\textwidth]{ascon_phases.pdf}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Speedup \& Scaling Analysis}
-\begin{columns}[T]
-\begin{column}{0.40\textwidth}
-Performance relative to ASCON:
-\vspace{0.05cm}
+\begin{frame}{Energy Efficiency (µJ/byte)}
 \begin{table}
-\centering
-\small
-\begin{tabular}{lccc}
-\toprule
-\textbf{Cipher} & \textbf{64B} & \textbf{256B} & \textbf{1024B} \\
-\midrule
-SPECK (ECB) & 1.34x & 1.08x & 1.03x \\
-PRESENT (ECB) & 0.012x & 0.010x & 0.009x \\
-\bottomrule
-\end{tabular}
+    \centering
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Cipher} & \textbf{16B} & \textbf{64B} & \textbf{256B} & \textbf{1024B} \\
+        \midrule
+        SPECK-64/128 (CTR) & 0.29 & 0.27 & 0.26 & 0.25 \\
+        ASCON-128 (AEAD) & 2.56 & 0.64 & 0.51 & 0.47 \\
+        PRESENT-128 (CTR) & 27.18 & 27.07 & 27.17 & 27.00 \\
+        \bottomrule
+    \end{tabular}
 \end{table}
-\vspace{0.15cm}
-\textbf{Key Insight}: SPECK's edge narrows as ASCON's 427-cycle init overhead amortizes over larger payloads.
-\end{column}
-\begin{column}{0.55\textwidth}
-\centering
-\includegraphics[width=0.9\textwidth]{scaling_analysis.pdf}
-\end{column}
-\end{columns}
-\end{frame}
-
-\section{Discussion}
-
-\begin{frame}{Key Takeaways}
+\vspace{-0.2cm}
 \begin{itemize}
-    \item \textbf{SPECK}: Best raw throughput (23.67 Mbps) -- optimal for bulk encryption on microcontrollers
-    \item \textbf{ASCON}: Competitive throughput (7.56 Mbps) with built-in AEAD -- gap narrows to $\sim$10\% at 256B+ payloads
-    \item \textbf{PRESENT}: 70x slower in software but remains relevant for hardware-constrained RFID-class devices
-    \item \textbf{Mode selection matters}: CTR offers semantic security with only 11\% throughput overhead vs ECB
+    \item SPECK: 108x more energy-efficient than PRESENT
+    \item ASCON: $\sim$41 µJ initialization overhead (constant), but per-byte cost scales from 2.56→0.47 µJ as payload grows
+    \item Ideal for battery-powered IoT sensors
 \end{itemize}
 \end{frame}
 
-\section{Conclusion and Recommendations}
+\begin{frame}{Speedup Analysis}
+\begin{columns}[T]
+\begin{column}{0.40\textwidth}
+Performance relative to ASCON:
+\vspace{0.1cm}
+\begin{table}
+    \centering
+    \small
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Cipher} & \textbf{64B} & \textbf{256B} & \textbf{1024B} \\
+        \midrule
+        SPECK (ECB) & 1.34x & 1.08x & 1.03x \\
+        PRESENT & 0.012x & 0.010x & 0.009x \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+\vspace{0.15cm}
+\textbf{Insight}: ASCON's 427-cycle init overhead amortizes at larger payloads; SPECK advantage shrinks from 34\% to 3\%.
+\end{column}
+\begin{column}{0.55\textwidth}
+\centering
+\includegraphics[width=0.9\textwidth]{combined_comparison.pdf}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\section{Analysis}
 
 \begin{frame}{Scorecard Comparison}
 \vspace{-0.3cm}
@@ -300,44 +271,43 @@ PRESENT (ECB) & 0.012x & 0.010x & 0.009x \\
         CPB (cycles) & $2{,}958$ & 42 & 132 \\
         ROM (KB) & 2.5 & 1.2 & 3.0 \\
         RAM (bytes) & 16 & 32 & 40 \\
-        Authenticated Encryption & No & No & Yes \\
-        NIST Standard & No & No & Yes (SP 800-232) \\
-        ISO Standard & Yes (29192-2) & No & No \\
-        Hardware Efficiency & Excellent & Good & Good \\
-        Software Efficiency & Poor & Excellent & Good \\
+        AEAD & No & No & Yes \\
+        NIST Standard & No & No & Yes \\
+        ISO Standard & Yes & No & No \\
         \bottomrule
     \end{tabular}
-    \caption{Scorecard Comparison: PRESENT, SPECK, ASCON}
 \end{table}
 \end{frame}
 
+\begin{frame}{Security Considerations}
+\begin{itemize}
+    \item \textbf{ASCON}: NIST SP 800-232, proven indifferentiability bounds, no attacks on full 12-round permutation
+    \item \textbf{PRESENT}: ISO/IEC 29192-2, provable SPN bounds (max diff probability $2^{-2}$), confidentiality only
+    \item \textbf{SPECK}: No provable bounds, best attacks reduce 20/27 rounds; ISO rejection (NSA origin, geopolitical objections)
+    \item \textbf{Side-channels}: SPECK vulnerable to CPA (50 traces on 8-bit); PRESENT's constant-time ops more resistant
+\end{itemize}
+\end{frame}
+
+
+\section{Recommendations}
+
 \begin{frame}{Use-Case Recommendations}
 \begin{enumerate}
-    \item \textbf{Real-time sensor data}: SPECK-64/128 in CTR mode
-    \begin{itemize}
-        \item 23.67 Mbps, 32 B RAM, for high-bandwidth sensor streams
-    \end{itemize}
-    \item \textbf{Secure IoT with auth}: ASCON
-    \begin{itemize}
-        \item 7.56 Mbps, AEAD, NIST standardized
-    \end{itemize}
-    \item \textbf{RFID tags}: PRESENT
-    \begin{itemize}
-        \item Ultra-low gate count, adequate for low-bandwidth comms
-    \end{itemize}
-    \item \textbf{Firmware authentication}: ASCON-hash
-    \begin{itemize}
-        \item 320-bit state, 12-round permutation for anti-tampering
-    \end{itemize}
-    \item \textbf{Hybrid deployment}: SPECK + ASCON
-    \begin{itemize}
-        \item SPECK for bulk data, ASCON for auth tags
-    \end{itemize}
-    \item \textbf{Legacy integration}: PRESENT-128 in CBC mode
-    \begin{itemize}
-        \item Backward compatibility with 128-bit security
-    \end{itemize}
+    \item \textbf{Real-time sensor data}: SPECK-64/128 (CTR) — 23.67 Mbps, 32B RAM
+    \item \textbf{Secure IoT with auth}: ASCON — 7.56 Mbps, AEAD, NIST standardized
+    \item \textbf{RFID tags}: PRESENT — ultra-low gate count (~1570 GE)
+    \item \textbf{Firmware authentication}: ASCON-hash — 320-bit state, 12-round $p^a$
+    \item \textbf{Hybrid deployment}: SPECK (bulk) + ASCON (auth tags)
+    \item \textbf{Legacy integration}: PRESENT-128 (CBC) — backward compatibility
 \end{enumerate}
+\end{frame}
+
+\begin{frame}{Limitations \& Future Work}
+\begin{itemize}
+    \item \textbf{Side-channels}: Not analyzed; SPECK shows vulnerability to CPA attacks
+    \item \textbf{Scope}: Single platform (RP2040), software-only implementations
+    \item \textbf{Future}: Hardware-accelerated implementations, side-channel countermeasures
+\end{itemize}
 \end{frame}
 
 \begin{frame}[plain]

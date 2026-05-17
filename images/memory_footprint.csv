@@ -1,0 +1,6 @@
+Cipher,Key Size,Block Size,State Size,Rounds,ROM (est.),RAM (est.),Notes
+PRESENT-80,80 bits (10 bytes),64 bits (8 bytes),8 bytes,32,~1.8 KB,~24 bytes,S-box (64B) + round keys (256B)
+PRESENT-128,128 bits (16 bytes),64 bits (8 bytes),8 bytes,32,~2.2 KB,~24 bytes,Doubled S-box for 128-bit key schedule
+SPECK-64/96,96 bits (12 bytes),64 bits (8 bytes),16 bytes (2×u32),26,~0.9 KB,~28 bytes,"Pure ARX — extremely compact, no S-box"
+SPECK-64/128,128 bits (16 bytes),64 bits (8 bytes),16 bytes (2×u32),32,~1.1 KB,~32 bytes,Pure ARX — highly compact on ARM Cortex-M0+
+ASCON-AEAD128,128 bits (16 bytes),64 bits (8 bytes),40 bytes (5×u64),12 (AEAD) / 6 (hash),~3.2 KB,~48 bytes,"5-word permutation, complex initialisation"

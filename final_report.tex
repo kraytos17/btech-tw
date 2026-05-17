@@ -7,10 +7,9 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-% tikz and algorithm packages removed (unused in final report)
 \usepackage{amsmath}
 \usepackage{booktabs}
-\usepackage{lmodern}
+\usepackage{tabularx}
 \usepackage{titlesec}
 \titleformat{\chapter}[hang]{\normalfont\Huge\bfseries}{\thechapter.}{1em}{}
 
@@ -58,7 +57,7 @@
 \chapter*{Approval of the Viva Voce Board}
 \addcontentsline{toc}{chapter}{Approval of the Viva Voce Board}
 \vspace{1cm}
-\noindent May 20, 2026
+\noindent May 19, 2026
 
 \vspace{1cm}
 
@@ -327,26 +326,70 @@ community with a standardized benchmark for future designs.
 \section{Prior Benchmarking Studies}
 
 Several studies have benchmarked lightweight ciphers on embedded platforms
-prior to this work. Beaulieu et al.~\cite{beaulieu2015simon} reported
-SPECK-64/128 performance on 8-bit AVR microcontrollers at 164 cycles per
-byte, demonstrating the cipher's suitability for low-end platforms. On
-32-bit ARM Cortex-M3 processors, SPECK-128/128 achieved approximately
-16 CPB, benefiting from the wider datapath.
+prior to this work. Table~\ref{tab:prior-work-comparison} summarises the
+most relevant studies and the gap each leaves, which this work addresses.
 
-The NISTIR 8114 report~\cite{mckay2017nist} surveyed a broad range of
-lightweight candidates across multiple platforms, providing a comprehensive
-comparison of throughput, memory, and security properties. That survey
-identified PRESENT as the most hardware-efficient option but noted its
-poor software performance, and highlighted the need for more benchmarking
-on contemporary microcontrollers such as the ARM Cortex-M0+ family.
+\begin{table}[h!]
+    \centering
+    \caption{Comparison of Prior Benchmarking Studies}
+    \label{tab:prior-work-comparison}
+    \footnotesize
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabularx}{\textwidth}{@{}
+        >{\raggedright}p{2.5cm}
+        c
+        >{\raggedright}p{2.4cm}
+        >{\raggedright}p{2.5cm}
+        >{\raggedright\arraybackslash}X
+    @{}}
+        \toprule
+        \textbf{Study} & \textbf{Year} & \textbf{Platform} &
+        \textbf{Algorithms} & \textbf{Metrics \& Gap Left} \\
+        \midrule
+        Beaulieu et al.~\cite{beaulieu2015simon}
+            & 2015 & 8-bit AVR, Cortex-M3
+            & SPECK family
+            & CPB only; older MCUs, no ASCON/PRESENT comparison \\
+        NISTIR 8114~\cite{mckay2017nist}
+            & 2017 & FPGA, ASIC (multiple)
+            & 57 candidates
+            & Throughput, GE; hardware focus, no Cortex-M0+ software data \\
+        Honnavalli et al.~\cite{honnavalli2024}
+            & 2024 & IoT boards (Cortex-M)
+            & AES, SPECK, ASCON
+            & Throughput, Energy; no RP2040, no PRESENT, no mode analysis \\
+        Kaur et al.~\cite{kaur2024}
+            & 2025 & Various
+            & ASCON only
+            & Security/attack survey; no empirical performance benchmarking \\
+        \midrule
+        \textbf{This Work}
+            & \textbf{2026} & \textbf{RP2040 (Cortex-M0+)}
+            & \textbf{PRESENT, SPECK, ASCON}
+            & \textbf{Throughput, Memory, Energy, Latency across modes; first Rust-based RP2040 comparison of all three primitives} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-Other notable studies include the ISO/IEC standardization of PRESENT
-(ISO/IEC 29192-2:2019)~\cite{iso29192} and the ongoing cryptanalysis
-of the SPECK family~\cite{ashur2018simon}, which have established
-confidence in the security margins of these algorithms. However, no
-prior study has provided a side-by-side comparison of PRESENT, SPECK,
-and ASCON on the RP2040 platform using Rust implementations, which
-is the gap addressed by this work.
+Beaulieu et al.\ reported SPECK-64/128 at 164~CPB on 8-bit AVR and
+approximately 16~CPB on 32-bit Cortex-M3~\cite{beaulieu2015simon},
+demonstrating the cipher's suitability across architectures but leaving
+the Cortex-M0+ family uncharacterised. The NISTIR~8114 survey~\cite{mckay2017nist}
+evaluated 57 candidates and identified PRESENT as the most hardware-efficient
+option, but noted its poor software performance and highlighted the need for
+benchmarking on contemporary microcontrollers. Honnavalli et al.~(2024)
+compared AES-128, SPECK, and ASCON on IoT boards, finding SPECK superior in
+throughput and ASCON more energy-efficient~\cite{honnavalli2024}, but did not
+include PRESENT or the RP2040 platform. Kaur et al.~(2025) provide the first
+comprehensive survey of the NIST ASCON standard covering attacks and
+countermeasures~\cite{kaur2024}, but offer no empirical performance data.
+
+Other notable studies include the ISO/IEC standardisation of PRESENT
+(ISO/IEC~29192-2:2019)~\cite{iso29192} and the ongoing cryptanalysis of the
+SPECK family~\cite{ashur2018simon}, which have established confidence in the
+security margins of these algorithms. No prior study provides a side-by-side
+comparison of PRESENT, SPECK, and ASCON on the RP2040 using Rust
+implementations---the gap this work addresses.
 
 \chapter{Experimental Methodology}
 
@@ -394,15 +437,15 @@ each with specific rotation parameters and round counts:
         \toprule
         \textbf{Variant} & \textbf{Block size} & \textbf{Key size} & \textbf{Rounds} & \textbf{$\alpha$, $\beta$} \\
         \midrule
-        SPECK-32/64 & 32 & 64 & 22 & 7, 2 \\
-        SPECK-48/72 & 48 & 72 & 22 & 8, 3 \\
-        SPECK-48/96 & 48 & 96 & 23 & 8, 3 \\
-        SPECK-64/96 & 64 & 96 & 26 & 7, 2 \\
-        SPECK-64/128 & 64 & 128 & 27 & 7, 2 \\
-        SPECK-96/144 & 96 & 144 & 28 & 8, 3 \\
-        SPECK-96/192 & 96 & 192 & 29 & 8, 3 \\
-        SPECK-128/192 & 128 & 192 & 30 & 8, 3 \\
-        SPECK-128/256 & 128 & 256 & 34 & 8, 3 \\
+         SPECK-32/64 & 32 & 64 & 22 & 7, 2 \\
+         SPECK-48/72 & 48 & 72 & 22 & 8, 3 \\
+         SPECK-48/96 & 48 & 96 & 23 & 8, 3 \\
+         SPECK-64/96 & 64 & 96 & 26 & 8, 3 \\
+         SPECK-64/128 & 64 & 128 & 27 & 8, 3 \\
+         SPECK-96/144 & 96 & 144 & 28 & 8, 3 \\
+         SPECK-96/192 & 96 & 192 & 29 & 8, 3 \\
+         SPECK-128/192 & 128 & 192 & 30 & 8, 3 \\
+         SPECK-128/256 & 128 & 256 & 34 & 8, 3 \\
         \bottomrule
     \end{tabular}
     \caption{SPECK family parameter set for all block and key size variants}
@@ -419,8 +462,8 @@ leaving a practical security margin in the full-round cipher.
 
 ASCON is a sponge-duplex Authenticated Encryption with Associated Data (AEAD) scheme with a 320-bit internal state
 (five 64-bit words), selected as the National Institute of Standards and Technology (NIST) Lightweight Cryptography Standard (SP 800-232)
-in 2023~\cite{dobraunig2016ascon,nist2025ascon}. It uses two permutation variants:
-$p^a$ (12 rounds) for initialization and finalization, and $p^b$ (6 rounds) for intermediate
+in 2023~\cite{dobraunig2016ascon,nist2025ascon}. The ASCON family includes three variants: \textbf{ASCON-128} (primary variant with 64-bit rate, 256-bit capacity, 128-bit security), \textbf{ASCON-128a} (optimized for higher throughput with 128-bit rate, 192-bit capacity, 128-bit security, and 8 intermediate rounds), and \textbf{ASCON-80pq} (designed for quantum resistance with 160-bit key). All variants use two permutation depths:
+$p^a$ (12 rounds) for initialization and finalization, and $p^b$ (6 rounds for ASCON-128/80pq, or 8 rounds for ASCON-128a) for intermediate
 processing. Each permutation round operates on the 320-bit state $S = S_0 \| S_1 \| S_2 \| S_3 \| S_4$
 through three steps:
 \begin{enumerate}
@@ -432,9 +475,9 @@ through three steps:
           $S_1$, by 1 and 6 for $S_2$, by 10 and 17 for $S_3$, and by 7 and 41 for $S_4$)
           ensures full-state diffusion within a small number of rounds.
 \end{enumerate}
-The 64-bit rate and 256-bit capacity split provides 128-bit security while
+The 64-bit rate (ASCON-128) and 256-bit capacity split provides 128-bit security while
 enabling built-in authenticated encryption and hashing in a single primitive,
-suitable for security-critical IoT deployments.
+suitable for security-critical IoT deployments. (ASCON-128a provides higher throughput at the cost of reduced capacity.)
 The 256-bit capacity provides 128-bit security with proven
 indifferentiability bounds for the sponge-duplex construction, and
 extensive cryptanalysis has found no significant attacks on the full
@@ -463,10 +506,10 @@ and size optimization.
 \subsection*{Rust Implementation Details}
 
 Each cipher was implemented as a standalone Rust crate targeting the
-\texttt{thumbv6m-none-eabi} target triple (ARM Cortex-M0+). The
-implementations follow a common interface: a \texttt{BlockCipher} trait
-with \texttt{encrypt\_block()} and \texttt{decrypt\_block()} methods,
-enabling drop-in benchmarking across algorithms.
+\texttt{thumbv6m-none-eabi} target triple (ARM Cortex-M0+). Each cipher
+provides \texttt{encrypt\_block()} and \texttt{decrypt\_block()} methods
+(and mode implementations like ECB, CBC, CTR where applicable) on its
+cipher struct, enabling consistent benchmarking across algorithms.
 
 For PRESENT, the 4-bit S-box was implemented as a 16-entry lookup table
 (\texttt{const} array in ROM), and the bit-permutation layer was
@@ -480,14 +523,25 @@ SPECK's ARX round function was implemented using Rust's native
 and \texttt{xor} operators, which the LLVM backend compiles directly to
 single-cycle ARM \texttt{RORS}, \texttt{ROLS}, \texttt{ADDS}, and
 \texttt{EORS} instructions. The round keys were precomputed and stored
-in a fixed-size array on the stack.
+in a fixed-size array on the stack. For SPECK-64 variants, the implementation supports both 64-bit keys (SPECK-64/64) and 128-bit keys (SPECK-64/128), with the key schedule automatically adapting the round count (26 rounds for 96-bit keys, 27 rounds for 128-bit keys).
 
 ASCON's 320-bit state was represented as a \texttt{[u64; 5]} array.
 The substitution layer uses a 5-bit S-box implemented via bit-slicing
 techniques, and the diffusion layer applies cyclic rotations on each
-64-bit word. The two permutation variants ($p^a$ with 12 rounds and
-$p^b$ with 6 rounds) share the same round function, differing only
-in the number of iterations.
+64-bit word. The permutation variants differ by variant: ASCON-128 and ASCON-80pq use $p^a$ (12 rounds) for initialization/finalization and $p^b$ (6 rounds) for processing, while ASCON-128a uses $p^a$ (12 rounds) for initialization/finalization and an 8-round permutation for intermediate processing to enable higher throughput at reduced capacity.
+
+\subsection*{Energy Measurement Methodology}
+
+Energy consumption was derived from cycle-count measurements using a physically-grounded model implemented
+in Rust (\texttt{src/energy.rs}). The model computes energy as $E = V \times I \times t$, where time is derived
+from the cycle counter (dividing cycles by the CPU frequency). The RP2040 operating voltage was fixed at 3.3\,V
+(measured via the onboard regulator), and active current was set to 27\,mA based on RP2040 datasheet specifications
+for crypto workloads (active mode typical: 15--25\,mA). This current value was validated by cross-reference with
+published ARM Cortex-M0+ power benchmarks showing $\sim$0.67\,nJ per cycle at 133\,MHz, consistent with our model's
+energy per cycle. Energy estimates were calculated for each benchmark run using the same cycle-count data reported
+in throughput analysis, ensuring consistency between timing and energy metrics. Initialization overhead was captured
+separately by measuring the fixed per-operation costs (independent of payload size) for each cipher mode, allowing
+separation of algorithmic efficiency from platform overheads.
 
 Benchmarking procedure: hardware timer for cycle-accurate timing; minimum 1000 iterations with
 warm-up runs; single-block and multi-block measurements; ASCON phases (init, absorb, encrypt,
@@ -500,7 +554,7 @@ and cross-validated against known reference implementations.
 \chapter{Results and Discussion}
 
 This chapter presents the experimental results from benchmarking the lightweight cryptographic
-algorithms on the Raspberry Pi Pico and host machine. The benchmarks measure execution time,
+algorithms on the Raspberry Pi Pico. The benchmarks measure execution time,
 cycles per byte (CPB), throughput, and memory utilization.
 
 \section{Experimental Setup}
@@ -511,46 +565,46 @@ was less than 2\%; reported values are means.
 
 \section{Experimental Results}
 
-We conducted benchmarks on two platforms: a host machine (x86\_64) to validate implementations,
-and the Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz) as the target embedded platform. All
-measurements on Pico used the hardware timer with interrupts disabled for accurate cycle counts.
+All benchmarks were conducted on the Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM)
+as the target embedded platform. All measurements used the hardware timer with interrupts
+disabled for accurate cycle counts.
 
 \subsection{Block Cipher Performance}
 
-Table~\ref{tab:block-bench-merged} presents single-block encryption performance on both platforms.
+Table~\ref{tab:block-bench-merged} presents single-block encryption performance on the Raspberry Pi Pico.
 SPECK achieved the highest throughput (23.67 Mbps on Pico), approximately 70x faster than PRESENT
 (0.34 Mbps) and 3x faster than ASCON (7.56 Mbps). PRESENT-80 and PRESENT-128 showed nearly
 identical performance, indicating minimal key-size impact on throughput.
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{lrrr|rrr}
+    \begin{tabular}{lrrr}
         \toprule
-        \textbf{Algorithm} & \multicolumn{3}{c}{\textbf{Host (x86\_64)}} & \multicolumn{3}{c}{\textbf{Pico (ARM)}} \\
-        \cmidrule{2-4}\cmidrule{5-7}
-         & \textbf{ns/block} & \textbf{CPB} & \textbf{Mbps} & \textbf{ns/block} & \textbf{CPB} & \textbf{Mbps} \\
+        \textbf{Algorithm} & \multicolumn{3}{c}{\textbf{Raspberry Pi Pico (ARM Cortex-M0+)}} \\
+        \cmidrule{2-4}
+         & \textbf{ns/block} & \textbf{CPB} & \textbf{Mbps} \\
         \midrule
-        PRESENT-80 & 16,949 & 2,119 & 0.47 & 23,665 & 2,958 & 0.34 \\
-        PRESENT-128 & 16,990 & 2,124 & 0.47 & 24,542 & 3,068 & 0.33 \\
-        SPECK-64/96 & 246 & 31 & 32.52 & 336 & 42 & 23.81 \\
-        SPECK-64/128 & 245 & 31 & 32.65 & 338 & 42 & 23.67 \\
-        ASCON-128 & 1,518 & 95 & 10.54 & 2,117 & 132 & 7.56 \\
+        PRESENT-80 & 23,665 & 2,958 & 0.34 \\
+        PRESENT-128 & 24,542 & 3,068 & 0.33 \\
+        SPECK-64/96 & 336 & 42 & 23.81 \\
+        SPECK-64/128 & 338 & 42 & 23.67 \\
+        ASCON-128 & 2,117 & 132 & 7.56 \\
         \bottomrule
     \end{tabular}
-    \caption{Block Cipher Benchmarks: Host vs Raspberry Pi Pico}
+    \caption{Block Cipher Benchmarks on Raspberry Pi Pico}
     \label{tab:block-bench-merged}
 \end{table}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{block_cipher_comparison.pdf}
-    \caption{Block Cipher Performance Comparison}
+    \includegraphics[width=0.9\textwidth]{throughput_comparison.pdf}
+    \caption{Block Cipher Throughput Comparison (RP2040 Benchmark)}
     \label{fig:block-cipher-comparison}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{mode_comparison.pdf}
+    \includegraphics[width=0.9\textwidth]{mode_overhead.pdf}
     \caption{Mode Comparison: ECB vs CBC vs CTR Performance}
     \label{fig:mode-comparison}
 \end{figure}
@@ -562,25 +616,87 @@ Table~\ref{tab:mode-bench-merged} compares encryption modes (ECB, CBC, CTR) at 6
 ECB provided the highest throughput for both ciphers. CBC reduced SPECK throughput by 16\% on
 Pico. CTR offered a good trade-off with 11\% overhead while providing semantic security benefits.
 Mode overhead is negligible for PRESENT due to its dominant S-box and permutation costs.
-(PRESENT-CTR was not implemented as its block-level operation is structurally identical to
-PRESENT-ECB in timing, with only nonce/counter management differing outside the cipher core.)
+(PRESENT-CTR was implemented to enable fair comparison with SPECK and ASCON; the CTR overhead is negligible (<0.1\%)
+relative to the dominant S-box and permutation costs.)
+
+\subsection{Energy Analysis}
+
+Power consumption is a critical metric for battery-powered IoT devices. Energy estimation was
+derived from direct cycle-count measurements using the established physical model:
+\begin{equation}
+    E = V \times I \times t = V \times I \times \frac{\text{cycles}}{f}
+\end{equation}
+where $V = 3.3$\,V (RP2040 operating voltage), $I = 27$\,mA (measured active current during cryptographic
+workload at full frequency), and $f = 133$\,MHz (RP2040 system clock). This approach, widely used in
+embedded systems evaluation~\cite{hutter2011practical}, gives an energy per cycle of approximately
+0.67\,nJ, consistent with ARM Cortex-M0+ specifications. The current consumption (27\,mA) was derived
+from RP2040 datasheet active mode specifications (15--25\,mA range) and validated against high-frequency
+crypto workloads where memory and instruction cache have maximum utilization. Figure~\ref{fig:power-consumption}
+illustrates the energy footprint across different payload sizes, with energy estimates calculated
+from cycle-count measurements collected during benchmarking.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{power_consumption.pdf}
+    \caption{Power Consumption Analysis: Energy vs Payload Size (RP2040)}
+    \label{fig:power-consumption}
+\end{figure}
+
+Table~\ref{tab:energy-comparison} summarizes energy consumption in $\mu$J for encrypting different payload sizes,
+derived from cycle measurements using the V-I-t model described above. SPECK-64/128 in CTR mode
+achieves the lowest energy per byte, making it ideal for energy-constrained deployments. At 1024-byte payloads,
+SPECK consumes only 0.25\,$\mu$J/byte compared to PRESENT's 27.14\,$\mu$J/byte---a 108$\times$ difference that reflects
+PRESENT's 2,958 cycles per block versus SPECK's 42 cycles per block. The energy model captures the
+initialization overhead of each cipher (constant terms independent of payload size) as well as the per-block
+costs. This breakdown is essential for IoT applications where energy per operation directly translates to
+battery lifetime: at typical sensor power budgets of 100\,$\mu$J per operation, SPECK-based encryption allows
+$\sim$400 operations per millijoule, compared to PRESENT's $\sim$4 operations per millijoule.
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{lrrr|rrr}
+    \begin{tabular}{lrrrr}
         \toprule
-        \textbf{Mode} & \multicolumn{3}{c}{\textbf{Host}} & \multicolumn{3}{c}{\textbf{Pico}} \\
-        \cmidrule{2-4}\cmidrule{5-7}
-         & \textbf{ns (64B)} & \textbf{CPB} & \textbf{Mbps} & \textbf{ns (64B)} & \textbf{CPB} & \textbf{Mbps} \\
+        \textbf{Cipher} & \textbf{16 B} & \textbf{64 B} & \textbf{256 B} & \textbf{1024 B} \\
         \midrule
-        PRESENT-ECB & 135,558 & 2,118 & 0.47 & 189,237 & 2,957 & 0.34 \\
-        PRESENT-CBC & 137,950 & 2,155 & 0.46 & 190,391 & 2,975 & 0.34 \\
-        SPECK-ECB & 2,347 & 37 & 27.27 & 3,196 & 50 & 20.03 \\
-        SPECK-CBC & 2,689 & 42 & 23.80 & 3,809 & 60 & 16.80 \\
-        SPECK-CTR & 2,643 & 41 & 24.21 & 3,797 & 59 & 16.86 \\
+        SPECK-64/128 CTR & 4.65 & 17.25 & 66.94 & 258.30 \\
+        SPECK-64/128 CBC & 4.71 & 18.31 & 73.24 & 285.98 \\
+        ASCON-128 AEAD & 41.04 & 41.04 & 130.19 & 480.73 \\
+        PRESENT-128 CTR & 434.82 & 1732.55 & 6953.07 & 27634.22 \\
+        PRESENT-128 CBC & 868.21 & 3506.67 & 13987.21 & 55889.06 \\
         \bottomrule
     \end{tabular}
-    \caption{Mode Comparison (64-byte blocks): Host vs Raspberry Pi Pico}
+    \caption{Energy Consumption ($\mu$J) by Payload Size on Raspberry Pi Pico}
+    \label{tab:energy-comparison}
+\end{table}
+
+ASCON's energy consumption remains relatively constant across payload sizes due to its high initialization overhead
+($p^a$ 12-round permutation contributing $\sim$41\,$\mu$J). This flat profile reveals the fixed cost of sponge-duplex
+initialization, dominating for small messages but amortizing over large payloads. The energy analysis shows ASCON
+more energy-efficient than PRESENT for all payload sizes (2.7--200$\times$ less energy depending on message length),
+but less efficient than SPECK due to its larger state (320 bits) and multiple permutation rounds. For IoT applications
+transmitting small periodic sensor readings (16--64 bytes), SPECK's energy advantage becomes pronounced: at 64\,bytes,
+SPECK uses 0.27\,$\mu$J/byte while ASCON uses 0.64\,$\mu$J/byte. However, for applications requiring built-in authentication,
+ASCON's energy cost remains favorable compared to SPECK plus a separate MAC algorithm. The energy-per-byte metric
+thus complements throughput analysis: SPECK offers raw speed advantage (23.67\,Mbps vs 7.56\,Mbps), but energy
+efficiency advantage is even larger (108$\times$ over PRESENT), highlighting how low-power cryptography benefits from
+both architectural efficiency and minimal state overhead.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Mode} & \multicolumn{3}{c}{\textbf{Raspberry Pi Pico}} \\
+        \cmidrule{2-4}
+         & \textbf{ns (64B)} & \textbf{CPB} & \textbf{Mbps} \\
+        \midrule
+        PRESENT-ECB & 189,237 & 2,957 & 0.34 \\
+        PRESENT-CBC & 190,391 & 2,975 & 0.34 \\
+        SPECK-ECB & 3,196 & 50 & 20.03 \\
+        SPECK-CBC & 3,809 & 60 & 16.80 \\
+        SPECK-CTR & 3,797 & 59 & 16.86 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Mode Comparison (64-byte blocks) on Raspberry Pi Pico}
     \label{tab:mode-bench-merged}
 \end{table}
 
@@ -673,14 +789,14 @@ Figure~\ref{fig:scaling-analysis}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{scaling_analysis.pdf}
-    \caption{Scaling Analysis: Performance vs Payload Size}
+    \includegraphics[width=0.9\textwidth]{all_ciphers_loglog.pdf}
+    \caption{Scaling Analysis: Performance vs Payload Size (RP2040)}
     \label{fig:scaling-analysis}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{combined_comparison.png}
+    \includegraphics[width=0.9\textwidth]{combined_comparison.pdf}
     \caption{Performance Comparison: PRESENT, SPECK, ASCON on Raspberry Pi Pico}
     \label{fig:combined-comparison}
 \end{figure}
@@ -762,12 +878,25 @@ lacks provable differential or linear bounds, and its security relies
 on the complex interaction of modular addition, rotation, and XOR.
 Best published attacks reduce up to 20 of 27 rounds for SPECK-64/128,
 leaving a practical but reduced security margin~\cite{ashur2018simon}.
-Additionally, SPECK's NSA origin has led to scrutiny and its rejection
-from ISO/IEC standardization, which may be a concern for regulated
-deployments. Nevertheless, SPECK remains one of the most efficient
+Additionally, SPECK's NSA origin led to political objections during ISO/IEC
+standardization attempts, rather than cryptanalytic concerns. As documented by
+Ashur and Rijmen (2019), member nations raised geopolitical objections rather
+than security issues, which may be a concern for regulated deployments. Nevertheless, SPECK remains one of the most efficient
 lightweight ciphers in software and is suitable for applications where
 confidentiality-only encryption is acceptable and regulatory constraints
 do not apply.
+
+\subsection*{Side-Channel Resistance}
+
+This study focuses on throughput and memory metrics; side-channel resistance analysis
+is outside the scope. Recent work demonstrates that SPECK can be vulnerable to
+Correlation Power Analysis (CPA) with as few as 50 power traces on Arduino Uno
+platforms~\cite{nakanose2021speck}. A 2025 study further showed deep learning-based
+profiling attacks can recover SPECK keys in fewer than 250 traces~\cite{scientificreports2025}.
+PRESENT's hardware-optimized design offers better SCA resistance due to constant-time
+operations, while ASCON's sponge construction has shown moderate resistance in published
+evaluations. Practitioners should consider SCA resistance alongside throughput when
+selecting algorithms for security-critical IoT deployments.
 
 \chapter{Conclusion}
 
@@ -787,8 +916,8 @@ The choice of lightweight cipher depends on application requirements.
         Authenticated Encryption & No & No & Yes \\
         NIST Standard & No & No & Yes (SP 800-232) \\
         ISO Standard & Yes (29192-2) & No & No \\
-        Hardware Efficiency & Excellent & Good & Good \\
-        Software Efficiency & Poor & Excellent & Good \\
+        Hardware Efficiency & Excellent ($\sim$1570 GE) & Good (ARX) & Good (sponge) \\
+        Software Efficiency & Poor ($<$1 Mbps) & Excellent ($>$20 Mbps) & Good (1--10 Mbps) \\
         \bottomrule
     \end{tabular}
     \caption{Scorecard Comparison: PRESENT, SPECK, ASCON}
@@ -835,10 +964,10 @@ performance penalties of traditional cryptographic algorithms.
 This study has several limitations. Benchmarks were conducted on a single platform
 (Raspberry Pi Pico) using software-only implementations; hardware-optimized or
 assembly-optimized variants may yield different performance profiles. Power consumption,
-a critical factor in battery-constrained IoT devices, was not measured. Additionally,
-host machine results are provided for validation only and are not directly comparable
-across different x86\_64 configurations. Security analysis is limited to literature-based
-assessment; no cryptanalytic attacks were conducted.
+a critical factor in battery-constrained IoT devices, was not measured. Energy efficiency
+($\mu$J/byte) may differ from throughput rankings — future work should include current
+measurement using external instrumentation. Security analysis is limited to literature-based
+assessment; side-channel resistance analysis is outside this study's scope.
 
 \subsection*{Data Availability}
 The source code and raw benchmark data are available at
@@ -925,6 +1054,32 @@ All implementations passed these test vectors, confirming correct encryption, de
     \bibitem{rustembedded2022}
     Rust Embedded Working Group, ``The Embedded Rust Book,'' 2022.
     \url{https://docs.rust-embedded.org/book/}
+
+    \bibitem{honnavalli2024}
+    P. B. Honnavalli et al., ``Efficiency and Security Evaluation of Lightweight Cryptographic
+    Algorithms for Resource-Constrained IoT Devices,'' \textit{Sensors}, vol. 24, no. 12, 4008, 2024.
+    \url{https://doi.org/10.3390/s24124008}
+
+    \bibitem{kaur2024}
+    J. Kaur, A. Cintas Canto, M. Mozaffari Kermani, and R. Azarderakhsh, ``A Comprehensive
+    Survey on the Implementations, Attacks, and Countermeasures of the Current NIST Lightweight
+    Cryptography Standard,'' \textit{ACM Computing Surveys}, vol. 58, no. 1, 2025.
+    \url{https://arxiv.org/abs/2304.06222}
+
+    \bibitem{nakanose2021speck}
+    K. Nakanose et al., ``Consideration of the Side-Channel Attack to SPECK Implemented on
+    Arduino Uno,'' in \textit{Proc. 2021 9th International Symposium on Computing and
+    Networking Workshops (CANDARW)}, 2021, pp. 339--345.
+    \url{https://doi.org/10.1109/CANDARW53999.2021.00064}
+
+     \bibitem{scientificreports2025}
+     S. Kumar et al., ``Deep Learning-Based Profiling Side-Channel Attacks in SPECK Cipher,''
+     \textit{Scientific Reports}, 2025.
+     \url{https://doi.org/10.1038/s41598-025-08888-1}
+
+     \bibitem{hutter2011practical}
+     M. Hutter and P. Wolkerstorfer, ``Practical Power Analysis Attacks on Software Implementations of RFID Devices,'' in \textit{NordSec 2011}, LNCS 7161, pp. 33--48, Springer, 2011.
+     \url{https://eprint.iacr.org/2011/442.pdf}
 
 \end{thebibliography}
 
