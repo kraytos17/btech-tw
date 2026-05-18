@@ -18,7 +18,6 @@
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue}
 
-% \sloppy
 \setstretch{1.4}
 
 \begin{document}
@@ -68,11 +67,9 @@ of the B.Tech programme requirements for the award of the Bachelor of Technology
 
 \vfill
 
-\noindent Prof. Tushar Ranjan Sahoo \hfill Prof. Sabyasachi Patra
+\noindent \underline{\hspace{5.5cm}} \hfill \underline{\hspace{5.5cm}}
 
-\vspace{1cm}
-
-\noindent Prof. Srichandan Sobhanayak \hfill Prof. Debasish Jena
+\noindent Prof. Debasish Jena (Supervisor) \hfill External Examiner
 
 \newpage
 \chapter*{Certificate}
@@ -462,8 +459,8 @@ leaving a practical security margin in the full-round cipher.
 
 ASCON is a sponge-duplex Authenticated Encryption with Associated Data (AEAD) scheme with a 320-bit internal state
 (five 64-bit words), selected as the National Institute of Standards and Technology (NIST) Lightweight Cryptography Standard (SP 800-232)
-in 2023~\cite{dobraunig2016ascon,nist2025ascon}. The ASCON family includes three variants: \textbf{ASCON-128} (primary variant with 64-bit rate, 256-bit capacity, 128-bit security), \textbf{ASCON-128a} (optimized for higher throughput with 128-bit rate, 192-bit capacity, 128-bit security, and 8 intermediate rounds), and \textbf{ASCON-80pq} (designed for quantum resistance with 160-bit key). All variants use two permutation depths:
-$p^a$ (12 rounds) for initialization and finalization, and $p^b$ (6 rounds for ASCON-128/80pq, or 8 rounds for ASCON-128a) for intermediate
+in 2023~\cite{dobraunig2016ascon,nist2025ascon}. The ASCON family includes three variants: \textbf{ASCON-128} (primary variant with 64-bit rate, 256-bit capacity, 128-bit security), \textbf{ASCON-128a} (optimized for higher throughput with 128-bit rate, 192-bit capacity, 128-bit security, and 8 intermediate rounds; not evaluated in this study), and \textbf{ASCON-80pq} (designed for quantum resistance with 160-bit key; not evaluated in this study). This work focuses exclusively on ASCON-128. The ASCON-128 variant uses two permutation depths:
+$p^a$ (12 rounds) for initialization and finalization, and $p^b$ (6 rounds) for intermediate
 processing. Each permutation round operates on the 320-bit state $S = S_0 \| S_1 \| S_2 \| S_3 \| S_4$
 through three steps:
 \begin{enumerate}
@@ -523,7 +520,7 @@ SPECK's ARX round function was implemented using Rust's native
 and \texttt{xor} operators, which the LLVM backend compiles directly to
 single-cycle ARM \texttt{RORS}, \texttt{ROLS}, \texttt{ADDS}, and
 \texttt{EORS} instructions. The round keys were precomputed and stored
-in a fixed-size array on the stack. For SPECK-64 variants, the implementation supports both 64-bit keys (SPECK-64/64) and 128-bit keys (SPECK-64/128), with the key schedule automatically adapting the round count (26 rounds for 96-bit keys, 27 rounds for 128-bit keys).
+in a fixed-size array on the stack. For SPECK-64 variants, the implementation supports 96-bit keys (SPECK-64/96) and 128-bit keys (SPECK-64/128), with the key schedule automatically adapting the round count (26 rounds for 96-bit keys, 27 rounds for 128-bit keys).
 
 ASCON's 320-bit state was represented as a \texttt{[u64; 5]} array.
 The substitution layer uses a 5-bit S-box implemented via bit-slicing
@@ -532,14 +529,16 @@ techniques, and the diffusion layer applies cyclic rotations on each
 
 \subsection*{Energy Measurement Methodology}
 
-Energy consumption was derived from cycle-count measurements using a physically-grounded model implemented
-in Rust (\texttt{src/energy.rs}). The model computes energy as $E = V \times I \times t$, where time is derived
-from the cycle counter (dividing cycles by the CPU frequency). The RP2040 operating voltage was fixed at 3.3\,V
-(measured via the onboard regulator), and active current was set to 27\,mA based on RP2040 datasheet specifications
-for crypto workloads (active mode typical: 15--25\,mA). This current value was validated by cross-reference with
-published ARM Cortex-M0+ power benchmarks showing $\sim$0.67\,nJ per cycle at 133\,MHz, consistent with our model's
-energy per cycle. Energy estimates were calculated for each benchmark run using the same cycle-count data reported
-in throughput analysis, ensuring consistency between timing and energy metrics. Initialization overhead was captured
+Energy consumption was estimated from cycle-count measurements using the standard physical energy model:
+$E = V \times I \times t$, where time is derived from the cycle counter (dividing cycles by the CPU frequency).
+The RP2040 operating voltage was fixed at 3.3\,V (standard operating voltage), and active current was set to
+80--90\,mA based on RP2040 datasheet active-mode specifications during high-frequency cryptographic workloads
+at full CPU utilization (133\,MHz). This gives an estimated energy per cycle of approximately 1.92--2.16\,nJ.
+\textbf{Important caveat:} Energy values reported herein represent relative estimates derived from cycle counts
+and should be interpreted primarily for \emph{comparative purposes} (e.g., cipher-to-cipher ratios) rather than
+absolute power consumption. Precise energy profiling would require direct instrumentation with a current probe or
+power analyzer. Energy estimates were calculated for each benchmark run using the cycle-count data reported in
+throughput analysis, ensuring consistency between timing and energy metrics. Initialization overhead was captured
 separately by measuring the fixed per-operation costs (independent of payload size) for each cipher mode, allowing
 separation of algorithmic efficiency from platform overheads.
 
@@ -619,21 +618,31 @@ Mode overhead is negligible for PRESENT due to its dominant S-box and permutatio
 (PRESENT-CTR was implemented to enable fair comparison with SPECK and ASCON; the CTR overhead is negligible (<0.1\%)
 relative to the dominant S-box and permutation costs.)
 
+\textbf{Note on CPB Interpretation:} Table~\ref{tab:block-bench-merged} shows CPB for \emph{single 64-bit block} encryption (42 CPB for SPECK), while Table~\ref{tab:mode-bench-merged} shows CPB for \emph{64-byte payloads} in streaming modes (50--60 CPB for SPECK depending on mode). The difference reflects mode overhead (initialization, IV handling, per-block padding) amortized across the payload. This is why longer payloads show higher per-block cost: the overhead is spread across multiple blocks. Energy values (Table~\ref{tab:energy-comparison}) capture this overhead explicitly, which is why they differ from raw block encryption cycles.
+
 \subsection{Energy Analysis}
 
 Power consumption is a critical metric for battery-powered IoT devices. Energy estimation was
-derived from direct cycle-count measurements using the established physical model:
+derived from direct cycle-count measurements using the physical model:
 \begin{equation}
     E = V \times I \times t = V \times I \times \frac{\text{cycles}}{f}
 \end{equation}
-where $V = 3.3$\,V (RP2040 operating voltage), $I = 27$\,mA (measured active current during cryptographic
-workload at full frequency), and $f = 133$\,MHz (RP2040 system clock). This approach, widely used in
-embedded systems evaluation~\cite{hutter2011practical}, gives an energy per cycle of approximately
-0.67\,nJ, consistent with ARM Cortex-M0+ specifications. The current consumption (27\,mA) was derived
-from RP2040 datasheet active mode specifications (15--25\,mA range) and validated against high-frequency
-crypto workloads where memory and instruction cache have maximum utilization. Figure~\ref{fig:power-consumption}
-illustrates the energy footprint across different payload sizes, with energy estimates calculated
-from cycle-count measurements collected during benchmarking.
+where $V = 3.3$\,V (RP2040 operating voltage), $I = 80$--$90$\,mA (active current during cryptographic
+workload at full frequency, per RP2040 datasheet), and $f = 133$\,MHz (RP2040 system clock). This yields
+an estimated energy per cycle of approximately 1.92--2.16\,nJ.
+
+\textbf{Critical Note on Energy Estimates:} The absolute energy values presented here are model-based estimates
+derived from cycle counts and standard electrical parameters. They should be interpreted primarily for \emph{relative
+comparison between ciphers} rather than as precise measurements of actual power dissipation. Accurate energy profiling
+would require direct measurement using hardware instrumentation (e.g., current probe, power analyzer, or on-chip
+power monitoring). Our approach is consistent with standard practice in embedded systems research~\cite{hutter2011practical}
+but should not be mistaken for empirical power measurements.
+
+The comparative ratios between ciphers, however, remain valid and meaningful: the differences in energy per byte
+reflect genuine differences in algorithmic efficiency on the target platform.
+
+Figure~\ref{fig:power-consumption} illustrates the estimated energy footprint across different payload sizes, with
+energy estimates calculated from cycle-count measurements collected during benchmarking.
 
 \begin{figure}[H]
     \centering
@@ -643,14 +652,16 @@ from cycle-count measurements collected during benchmarking.
 \end{figure}
 
 Table~\ref{tab:energy-comparison} summarizes energy consumption in $\mu$J for encrypting different payload sizes,
-derived from cycle measurements using the V-I-t model described above. SPECK-64/128 in CTR mode
-achieves the lowest energy per byte, making it ideal for energy-constrained deployments. At 1024-byte payloads,
-SPECK consumes only 0.25\,$\mu$J/byte compared to PRESENT's 27.14\,$\mu$J/byte---a 108$\times$ difference that reflects
-PRESENT's 2,958 cycles per block versus SPECK's 42 cycles per block. The energy model captures the
-initialization overhead of each cipher (constant terms independent of payload size) as well as the per-block
-costs. This breakdown is essential for IoT applications where energy per operation directly translates to
-battery lifetime: at typical sensor power budgets of 100\,$\mu$J per operation, SPECK-based encryption allows
-$\sim$400 operations per millijoule, compared to PRESENT's $\sim$4 operations per millijoule.
+derived from cycle measurements using the V-I-t model (with current value of 80--90\,mA as described above).
+The relative energy ratios between ciphers remain consistent regardless of the absolute current assumption:
+SPECK-64/128 in CTR mode achieves the lowest energy per byte, maintaining a $\sim$108$\times$ efficiency advantage
+over PRESENT due to significantly lower cycle counts (42 CPB vs. 2,958 CPB per block). This differential reflects
+genuine algorithmic differences and platform characteristics, making it valid for comparative analysis and deployment
+recommendations. The energy model captures initialization overhead (constant terms independent of payload size) as
+well as per-block costs, essential for IoT applications where energy per operation directly translates to battery
+lifetime. \textbf{Note:} Energy values include CTR mode overhead and per-operation setup costs beyond raw block encryption cycles;
+the overhead is amortized across payload size, leading to higher per-block energy costs for small payloads compared to the
+raw CPB figures in Table~\ref{tab:block-bench-merged}.
 
 \begin{table}[H]
     \centering
@@ -658,24 +669,24 @@ $\sim$400 operations per millijoule, compared to PRESENT's $\sim$4 operations pe
         \toprule
         \textbf{Cipher} & \textbf{16 B} & \textbf{64 B} & \textbf{256 B} & \textbf{1024 B} \\
         \midrule
-        SPECK-64/128 CTR & 4.65 & 17.25 & 66.94 & 258.30 \\
-        SPECK-64/128 CBC & 4.71 & 18.31 & 73.24 & 285.98 \\
-        ASCON-128 AEAD & 41.04 & 41.04 & 130.19 & 480.73 \\
-        PRESENT-128 CTR & 434.82 & 1732.55 & 6953.07 & 27634.22 \\
-        PRESENT-128 CBC & 868.21 & 3506.67 & 13987.21 & 55889.06 \\
+        SPECK-64/128 CTR & 14.64 & 54.31 & 210.74 & 813.17 \\
+        SPECK-64/128 CBC & 14.83 & 57.64 & 230.57 & 900.31 \\
+        ASCON-128 AEAD & 129.20 & 129.20 & 409.86 & 1513.41 \\
+        PRESENT-128 CTR & 1368.88 & 5454.32 & 21889.29 & 86996.62 \\
+        PRESENT-128 CBC & 2733.25 & 11039.52 & 44033.81 & 175947.04 \\
         \bottomrule
     \end{tabular}
-    \caption{Energy Consumption ($\mu$J) by Payload Size on Raspberry Pi Pico}
+    \caption{Energy Consumption ($\mu$J) by Payload Size on Raspberry Pi Pico (estimated at 80--90\,mA active current)}
     \label{tab:energy-comparison}
 \end{table}
 
-ASCON's energy consumption remains relatively constant across payload sizes due to its high initialization overhead
-($p^a$ 12-round permutation contributing $\sim$41\,$\mu$J). This flat profile reveals the fixed cost of sponge-duplex
-initialization, dominating for small messages but amortizing over large payloads. The energy analysis shows ASCON
+ASCON's energy consumption remains relatively constant across small payload sizes (16--64\,bytes) due to its high initialization overhead
+($p^a$ 12-round permutation contributing $\sim$129\,$\mu$J). This plateau in Table~\ref{tab:energy-comparison} (129.20\,µJ for both 16B and 64B) reveals that the fixed cost of sponge-duplex
+initialization completely dominates the per-byte encryption cost at small payloads. For larger payloads (256B, 1024B), the energy cost increases as the per-block processing becomes significant relative to initialization. The energy analysis shows ASCON
 more energy-efficient than PRESENT for all payload sizes (2.7--200$\times$ less energy depending on message length),
 but less efficient than SPECK due to its larger state (320 bits) and multiple permutation rounds. For IoT applications
 transmitting small periodic sensor readings (16--64 bytes), SPECK's energy advantage becomes pronounced: at 64\,bytes,
-SPECK uses 0.27\,$\mu$J/byte while ASCON uses 0.64\,$\mu$J/byte. However, for applications requiring built-in authentication,
+SPECK uses 0.85\,$\mu$J/byte while ASCON uses 2.02\,$\mu$J/byte. However, for applications requiring built-in authentication,
 ASCON's energy cost remains favorable compared to SPECK plus a separate MAC algorithm. The energy-per-byte metric
 thus complements throughput analysis: SPECK offers raw speed advantage (23.67\,Mbps vs 7.56\,Mbps), but energy
 efficiency advantage is even larger (108$\times$ over PRESENT), highlighting how low-power cryptography benefits from
@@ -806,7 +817,7 @@ Figure~\ref{fig:scaling-analysis}.
 The benchmark results revealed a clear performance hierarchy: SPECK dominated raw throughput
 (23.67 Mbps) due to its lightweight ARX rounds, ASCON offered competitive throughput
 (7.56 Mbps) with built-in authenticated encryption, and PRESENT trailed significantly in
-software (0.34 Mbps) but remains relevant for hardware-constrained deployments. The
+software (0.34 Mbps) but remains relevant for hardware-constrained deployments (see Figure~\ref{fig:combined-comparison}). The
 speedup analysis showed that ASCON's initialization overhead ($\sim$427 cycles) was quickly
 amortized, narrowing the gap with SPECK at larger payloads. For applications processing
 256-byte or larger packets, ASCON's throughput approached within 10\% of SPECK while
@@ -961,13 +972,22 @@ increasingly enable secure-by-design embedded systems without the
 performance penalties of traditional cryptographic algorithms.
 
 \subsection*{Limitations}
-This study has several limitations. Benchmarks were conducted on a single platform
-(Raspberry Pi Pico) using software-only implementations; hardware-optimized or
-assembly-optimized variants may yield different performance profiles. Power consumption,
-a critical factor in battery-constrained IoT devices, was not measured. Energy efficiency
-($\mu$J/byte) may differ from throughput rankings — future work should include current
-measurement using external instrumentation. Security analysis is limited to literature-based
-assessment; side-channel resistance analysis is outside this study's scope.
+This study has several inherent limitations that define its scope. Benchmarks were conducted exclusively on the Raspberry Pi Pico (ARM Cortex-M0+); results are specific to this 32-bit architecture and clock speed, and may not generalize to other embedded platforms (8-bit AVR, 32-bit Cortex-M4, 64-bit ARM, RISC-V). All implementations are written in Rust; C/C++ implementations may exhibit different compiler optimizations and performance characteristics. Energy values are model-based estimates derived from cycle counts and electrical parameters rather than direct power measurements with instrumentation. Security analysis is limited to published cryptanalysis literature; side-channel resistance (CPA, differential power analysis, timing attacks) is outside this study's scope and represents a critical gap for real-world deployments.
+
+\subsection*{Natural Extensions of This Work}
+Several natural extensions of this work would provide valuable insights for the embedded systems community:
+
+\textbf{Cross-Platform Evaluation}: Testing implementations on the ESP32 (ARM Cortex-M35F, 240 MHz dual-core) and STM32L476 (Cortex-M4, 80 MHz) would assess how results scale across architectures with different capabilities. This would reveal whether observed performance hierarchies are architecture-independent or specific to the Cortex-M0+.
+
+\textbf{Language Comparison}: Re-implementing the fastest cipher (SPECK) in C with GCC compiler optimizations and comparing CPB against the Rust LLVM baseline would quantify the impact of language choice and compiler backend on embedded cryptographic performance. This is practically important since many IoT projects use C.
+
+\textbf{Empirical Power Profiling}: Measuring actual current draw using a multimeter with logging capability (or low-cost USB power monitors) would validate the V-I-t energy model assumptions. Even rough measurements would indicate whether the 80–90 mA active current assumption is reasonable and where the model breaks down.
+
+\textbf{Clock Frequency Scaling}: Testing implementations at multiple RP2040 clock speeds (50 MHz, 100 MHz, 133 MHz) would establish whether the cycle-based performance ratios remain constant or whether memory/instruction cache effects emerge at different frequencies. This is relevant for low-power IoT scenarios where clock throttling is common.
+
+\textbf{Algorithm Variant Comparison}: Evaluating ASCON-128a (higher rate, lower capacity) on the same platform would provide a case study in security-performance trade-offs within a single algorithm family, complementing the cross-algorithm analysis in this study.
+
+These extensions are accessible to undergraduate research teams with standard laboratory equipment and would significantly broaden the applicability of the findings to real-world IoT deployments.
 
 \subsection*{Data Availability}
 The source code and raw benchmark data are available at

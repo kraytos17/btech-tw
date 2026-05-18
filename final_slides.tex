@@ -3,6 +3,16 @@
 \usetheme{Madrid}
 \usecolortheme{default}
 \setbeamertemplate{navigation symbols}{}
+
+% Enhanced color scheme
+\definecolor{darkblue}{rgb}{0.1, 0.3, 0.6}
+\definecolor{lightblue}{rgb}{0.8, 0.9, 1.0}
+\definecolor{darkred}{rgb}{0.7, 0.1, 0.1}
+\definecolor{darkgreen}{rgb}{0.1, 0.6, 0.2}
+\setbeamercolor{structure}{fg=darkblue}
+\setbeamercolor{alerted text}{fg=darkred}
+\setbeamercolor{example text}{fg=darkgreen}
+
 \setbeamertemplate{footline}{
   \leavevmode%
   \hbox{\begin{beamercolorbox}[wd=.333\paperwidth,ht=2.5ex,dp=1ex,center]{author in head/foot}%
@@ -18,8 +28,8 @@
 
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{booktabs}
-% tikz, algorithmic, xcolor, hyperref removed (loaded by beamer)
 
 \graphicspath{{images/}}
 
@@ -95,12 +105,12 @@ This study aims to:
     \centering
     \begin{tabular}{lccc}
         \toprule
-        \textbf{Property} & \textbf{PRESENT} & \textbf{SPECK} & \textbf{ASCON} \\
+        \textbf{Property} & \textcolor{darkred}{\textbf{PRESENT}} & \textcolor{darkgreen}{\textbf{SPECK}} & \textcolor{darkblue}{\textbf{ASCON}} \\
         \midrule
         Block Size & 64 bits & 64 bits & 64 bits \\
-        Key Sizes & 80, 128 bits & 64--256 bits & 128 bits \\
-        Structure & SPN & ARX Feistel & Sponge-Duplex \\
-        Rounds & 31/32 & 22-34 & 12 \\
+        Key Sizes & 80, 128 bits & 64–256 bits & 128 bits \\
+        Structure & SPN & ARX GFN & Sponge-Duplex \\
+        Rounds & 31/32 & 22–34 (key size) & 12 \\
         Standardization & ISO 29192-2 & --- & NIST SP 800-232 \\
         AEAD Support & No & No & Yes \\
         \bottomrule
@@ -108,22 +118,33 @@ This study aims to:
 \end{table}
 
 \vspace{0.15cm}
-\textbf{Key Differentiators}:
+\textbf{\structure{Key Differentiators:}}
 \begin{itemize}
-    \item \textbf{PRESENT}: $\sim$1,570 GE (hardware-optimized)
-    \item \textbf{SPECK}: 42 CPB (software fastest)
-    \item \textbf{ASCON}: AEAD + hashing built-in
+    \item \textbf{\textcolor{darkred}{PRESENT}}: $\sim$1,570 GE (\textbf{hardware-optimized})
+    \item \textbf{\textcolor{darkgreen}{SPECK}}: \textbf{42 CPB} (\textbf{software fastest})
+    \item \textbf{\textcolor{darkblue}{ASCON}}: \textbf{AEAD} + hashing built-in (\alert{NIST standard})
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Platform \& Metrics}
-\textbf{Hardware}: Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM)
+\textbf{Hardware}: Raspberry Pi Pico (ARM Cortex-M0+, 133 MHz, 264 KB SRAM, 2 MB Flash)
 
 \vspace{0.15cm}
-\textbf{Metrics}: Throughput (Mbps), Cycles/Byte, ROM footprint, RAM usage
+\textbf{Metrics}:
+\begin{itemize}
+    \item \textbf{Performance}: Throughput (Mbps), Cycles/Byte (CPB), latency
+    \item \textbf{Memory}: ROM footprint (KB), RAM usage (bytes)
+    \item \textbf{Energy}: µJ per byte using V-I-t model (I = 80--90 mA per RP2040 datasheet; estimates are relative for comparison)
+\end{itemize}
 
 \vspace{0.15cm}
-\textbf{Procedure}: 1000+ iterations, hardware timer, test vector validation
+\textbf{Testing Procedure}:
+\begin{itemize}
+    \item 1000+ iterations per cipher-mode-payload combination
+    \item Hardware timer (RP2040 internal counter @ 133 MHz)
+    \item Test vector validation (NIST vectors for PRESENT, Beaulieu for SPECK)
+    \item Payload sizes: 8B, 16B, 64B, 256B, 1024B
+\end{itemize}
 \end{frame}
 
 
@@ -145,20 +166,49 @@ This study aims to:
         \bottomrule
     \end{tabular}
 \end{table}
+\vspace{0.05cm}
+\textbf{\large Key Finding}: \alert{SPECK is \textbf{70x faster}} than PRESENT and \textbf{3x faster} than ASCON (\alert{23.67 Mbps} vs 0.34 Mbps vs 7.56 Mbps).
+
+\vspace{0.15cm}
+\small \textit{\structure{Insight}}: Single-block throughput shows the dramatic performance gap — SPECK's ARX design dominates on software platforms.
+\end{frame}
+
+\begin{frame}{Mode Impact: ECB vs CBC vs CTR}
+\vspace{-0.3cm}
+\begin{table}
+    \centering
+    \small
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Cipher Mode} & \textbf{64B (Mbps)} & \textbf{256B (Mbps)} & \textbf{Trade-off} \\
+        \midrule
+        SPECK-ECB & \textbf{19.04} & \textbf{20.33} & \textbf{\textcolor{darkgreen}{Fastest}}; no IV overhead \\
+        SPECK-CBC & 16.07 & 18.90 & $-$16\%; sequential dependency \\
+        SPECK-CTR & 17.14 & 19.42 & $-$11\%; \alert{parallelizable, semantic security} \\
+        \midrule
+        PRESENT-ECB & 0.34 & 0.34 & Fastest; block-aligned \\
+        PRESENT-CTR & 0.33 & 0.33 & $\sim$0\% overhead (negligible vs 2,958 CPB) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\vspace{0.2cm}
+\textbf{\structure{Key Insight}}: Mode overhead is \textbf{\alert{cipher-dependent}}. SPECK loses 11–16\% in CBC/CTR; PRESENT's overhead is \textbf{\structure{negligible}} due to dominant S-box cost.
+
 \vspace{0.1cm}
-\textbf{Key Finding}: SPECK is \textbf{70x faster} than PRESENT and \textbf{3x faster} than ASCON.
+\textbf{\textcolor{darkgreen}{Recommendation}}: Use \textbf{CTR} for applications needing semantic security \& parallelism without sacrificing performance.
 \end{frame}
 
 \begin{frame}{Why This Performance Gap?}
-\textbf{Architectural Explanation:}
+\textbf{\structure{Architectural Explanation:}}
 \begin{itemize}
-    \item \textbf{SPECK (ARX)}: Add, Rotate, XOR $\rightarrow$ single-cycle ARM instructions (\texttt{ADDS}, \texttt{RORS}, \texttt{EORS}) — no memory lookups
-    \item \textbf{PRESENT (SPN)}: Bit-permutation requires 64 separate bit extractions/reinsertions per round — 31 rounds (PRESENT-80) / 32 rounds (PRESENT-128) = 70x overhead
-    \item \textbf{ASCON (Sponge)}: 64-bit words align with Cortex-M0+ datapath, but 12-round $p^a$ permutation is heavier than SPECK's 5-instruction round
+    \item \textbf{\textcolor{darkgreen}{SPECK (ARX)}}: Add, Rotate, XOR $\rightarrow$ \alert{\textbf{single-cycle ARM}} instructions (\texttt{ADDS}, \texttt{RORS}, \texttt{EORS}) — \textbf{no memory lookups} $\checkmark$
+    \item \textbf{\textcolor{darkred}{PRESENT (SPN)}}: Bit-permutation requires \alert{\textbf{64 separate}} bit extractions/reinsertions per round — 31/32 rounds = \textbf{70x overhead} $\times$
+    \item \textbf{\textcolor{darkblue}{ASCON (Sponge)}}: 64-bit words align with Cortex-M0+ datapath, but 12-round $p^a$ permutation \textbf{heavier} than SPECK's 5-instruction round
 \end{itemize}
 
 \vspace{0.2cm}
-\textbf{Bottom Line}: Hardware-optimized ciphers (PRESENT) sacrifice software performance; software-optimized ciphers (SPECK) exploit architectural fit.
+\textbf{\structure{Bottom Line}}: \alert{\textbf{Hardware-optimized}} ciphers (PRESENT) \textbf{sacrifice software}; \textbf{software-optimized} ciphers (SPECK) \textbf{exploit} architectural fit.
 \end{frame}
 
 \begin{frame}{Memory Footprint}
@@ -200,6 +250,7 @@ This study aims to:
         \bottomrule
     \end{tabular}
 \end{table}
+\textbf{Why init $\approx$ finalize?} Both run full 12-round $p^a$ permutation; absorb/encrypt share similar per-byte cost.
 \end{column}
 \begin{column}{0.50\textwidth}
 \centering
@@ -211,21 +262,23 @@ This study aims to:
 \begin{frame}{Energy Efficiency (µJ/byte)}
 \begin{table}
     \centering
+    \small
     \begin{tabular}{lrrrr}
         \toprule
         \textbf{Cipher} & \textbf{16B} & \textbf{64B} & \textbf{256B} & \textbf{1024B} \\
         \midrule
-        SPECK-64/128 (CTR) & 0.29 & 0.27 & 0.26 & 0.25 \\
-        ASCON-128 (AEAD) & 2.56 & 0.64 & 0.51 & 0.47 \\
-        PRESENT-128 (CTR) & 27.18 & 27.07 & 27.17 & 27.00 \\
+        \textcolor{darkgreen}{\textbf{SPECK-64/128 (CTR)}} & \textcolor{darkgreen}{\textbf{0.92}} & \textcolor{darkgreen}{\textbf{0.85}} & \textcolor{darkgreen}{\textbf{0.82}} & \textcolor{darkgreen}{\textbf{0.79}} \\
+        \textcolor{darkblue}{\textbf{ASCON-128 (AEAD)}} & \textcolor{darkblue}{\textbf{8.08}} & \textcolor{darkblue}{\textbf{2.02}} & \textcolor{darkblue}{\textbf{1.60}} & \textcolor{darkblue}{\textbf{1.48}} \\
+        \textcolor{darkred}{\textbf{PRESENT-128 (CTR)}} & \textcolor{darkred}{\textbf{85.56}} & \textcolor{darkred}{\textbf{85.29}} & \textcolor{darkred}{\textbf{85.51}} & \textcolor{darkred}{\textbf{84.96}} \\
         \bottomrule
     \end{tabular}
 \end{table}
-\vspace{-0.2cm}
+\vspace{-0.15cm}
 \begin{itemize}
-    \item SPECK: 108x more energy-efficient than PRESENT
-    \item ASCON: $\sim$41 µJ initialization overhead (constant), but per-byte cost scales from 2.56→0.47 µJ as payload grows
-    \item Ideal for battery-powered IoT sensors
+    \item \alert{\textbf{SPECK}}: \textbf{108x} more energy-efficient than PRESENT (ratio invariant to current assumption)
+    \item \structure{\textbf{ASCON}}: $\sim$129 µJ initialization overhead (constant at 16–64B), then scales from 8.08→1.48 µJ/byte
+    \item Energy estimated at 80–90 mA active current; \textbf{relative ratios valid} for deployment decisions
+    \item \textcolor{darkgreen}{\textit{Ideal for battery-powered IoT sensors}}
 \end{itemize}
 \end{frame}
 
@@ -248,6 +301,9 @@ Performance relative to ASCON:
 \end{table}
 \vspace{0.15cm}
 \textbf{Insight}: ASCON's 427-cycle init overhead amortizes at larger payloads; SPECK advantage shrinks from 34\% to 3\%.
+
+\vspace{0.1cm}
+\textbf{Note on PRESENT}: Oscillation at small sizes reflects 8-byte block padding overhead vs. cipher cost.
 \end{column}
 \begin{column}{0.55\textwidth}
 \centering
@@ -265,26 +321,49 @@ Performance relative to ASCON:
     \centering
     \begin{tabular}{lccc}
         \toprule
-        \textbf{Metric} & \textbf{PRESENT} & \textbf{SPECK} & \textbf{ASCON} \\
+        \textbf{Metric} & \textcolor{darkred}{\textbf{PRESENT}} & \textcolor{darkgreen}{\textbf{SPECK}} & \textcolor{darkblue}{\textbf{ASCON}} \\
         \midrule
-        Throughput (Mbps) & 0.34 & 23.67 & 7.56 \\
-        CPB (cycles) & $2{,}958$ & 42 & 132 \\
-        ROM (KB) & 2.5 & 1.2 & 3.0 \\
+        Throughput (Mbps) & 0.34 & \textbf{23.67} & 7.56 \\
+        CPB (cycles) & $2{,}958$ & \textbf{42} & 132 \\
+        ROM (KB) & 2.5 & \textbf{1.2} & 3.0 \\
         RAM (bytes) & 16 & 32 & 40 \\
-        AEAD & No & No & Yes \\
-        NIST Standard & No & No & Yes \\
-        ISO Standard & Yes & No & No \\
+        AEAD & No & No & \checkmark \\
+        NIST Standard & No & No & \checkmark \\
+        ISO Standard & \checkmark & No & No \\
         \bottomrule
     \end{tabular}
 \end{table}
+
+\vspace{0.3cm}
+\small \structure{\textbf{Summary}}: \textcolor{darkgreen}{SPECK} dominates \textbf{performance} and \textbf{ROM}; \textcolor{darkblue}{ASCON} provides \textbf{standardization + AEAD}; \textcolor{darkred}{PRESENT} excels in \textbf{hardware} but \textbf{poor software}.
 \end{frame}
 
 \begin{frame}{Security Considerations}
 \begin{itemize}
-    \item \textbf{ASCON}: NIST SP 800-232, proven indifferentiability bounds, no attacks on full 12-round permutation
-    \item \textbf{PRESENT}: ISO/IEC 29192-2, provable SPN bounds (max diff probability $2^{-2}$), confidentiality only
-    \item \textbf{SPECK}: No provable bounds, best attacks reduce 20/27 rounds; ISO rejection (NSA origin, geopolitical objections)
-    \item \textbf{Side-channels}: SPECK vulnerable to CPA (50 traces on 8-bit); PRESENT's constant-time ops more resistant
+    \item \textbf{\textcolor{darkblue}{ASCON}}: \alert{\textbf{NIST SP 800-232}}, proven indifferentiability bounds, no attacks on full 12-round permutation (\checkmark \textbf{strongest})
+    \item \textbf{\textcolor{darkred}{PRESENT}}: ISO/IEC 29192-2, \textbf{provable SPN} bounds (max diff probability $2^{-2}$), \alert{confidentiality only} (no authentication)
+    \item \textbf{\textcolor{darkgreen}{SPECK}}: \alert{\textbf{No provable}} bounds, best attacks reduce 20/27 rounds; \alert{ISO rejection} (NSA origin, geopolitical objections) (\textit{research use only})
+    \item \textbf{\structure{Side-channels}}: \alert{\textbf{SPECK}} vulnerable to CPA (50 traces on 8-bit); \textbf{PRESENT's} constant-time ops more resistant; \textbf{ASCON} shows moderate resistance
+\end{itemize}
+
+\vspace{0.2cm}
+\small \textit{\structure{Trade-off}}: \textcolor{darkblue}{ASCON} = strongest security; \textcolor{darkred}{PRESENT} = provable bounds; \textcolor{darkgreen}{SPECK} = fastest but weakest guarantees.
+\end{frame}
+
+\begin{frame}{Key Takeaways: Design Lessons}
+\textbf{\structure{Algorithm Design Trade-offs:}}
+\begin{itemize}
+    \item \alert{\textbf{Hardware $\neq$ Software}}: PRESENT's bit-permutation is elegant in silicon (1,570 GE) but catastrophic in code (2,958 CPB)
+    \item \textbf{\structure{Instruction Set Alignment}}: SPECK's ARX operations map \textbf{perfectly to ARM} instructions (42 CPB); sponge-based designs add fixed overhead (427 cycles init)
+    \item \textbf{\structure{AEAD vs Raw Cipher}}: ASCON's built-in authentication justifies overhead; SPECK+HMAC would be bulkier
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{\structure{For Practitioners:}}
+\begin{itemize}
+    \item Choose by \alert{\textbf{workload}}, not by raw speed: \textcolor{darkgreen}{\textbf{sensor data}} (SPECK) vs \textcolor{darkblue}{\textbf{authenticated IoT}} (ASCON) vs \textcolor{darkred}{\textbf{legacy}} (PRESENT)
+    \item \textbf{\structure{Standardization matters}}: NIST-endorsed ASCON gaining adoption; SPECK rejected by ISO (politics + no provable bounds)
+    \item \textbf{\structure{Context is everything}}: RP2040 (Cortex-M0+) results don't generalize to hardware, 8-bit MCUs, or server environments
 \end{itemize}
 \end{frame}
 
@@ -303,19 +382,27 @@ Performance relative to ASCON:
 \end{frame}
 
 \begin{frame}{Limitations \& Future Work}
+\textbf{\structure{Current Limitations:}}
 \begin{itemize}
-    \item \textbf{Side-channels}: Not analyzed; SPECK shows vulnerability to CPA attacks
-    \item \textbf{Scope}: Single platform (RP2040), software-only implementations
-    \item \textbf{Future}: Hardware-accelerated implementations, side-channel countermeasures
+    \item \textbf{Single platform}: RP2040 only — architecture-specific results
+    \item \textbf{Single language}: Rust implementation — no C/C++ comparison
+    \item \textbf{No side-channel analysis}: Timing/power attacks not evaluated
 \end{itemize}
+
+\vspace{0.2cm}
+\textbf{\structure{Natural Extensions of This Work:}}
+\begin{enumerate}
+    \item Port implementations to ESP32 and compare against RP2040 results
+    \item Implement SPECK in C with compiler optimizations and benchmark against Rust
+    \item Conduct comparative energy analysis using actual multimeter measurements
+    \item Expand to test multiple RP2040 clock speeds (50 MHz, 100 MHz, 133 MHz)
+    \item Compare ASCON-128 throughput against ASCON-128a on same platform
+\end{enumerate}
 \end{frame}
 
 \begin{frame}[plain]
 \begin{center}
-\Huge Thank You\\[0.8cm]
-\normalsize Rajesh Kumar Jena (B122088)\\
-Soumil Kumar (B122114)\\
-Punit Kumar (B422041)\\[0.5cm]
+\Huge Thank You
 \end{center}
 \end{frame}
 
