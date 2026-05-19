@@ -66,8 +66,8 @@ Supervisor: Prof. Debasish Jena
 \textbf{Historical Context}
 \begin{itemize}
     \item DES (1977) $\rightarrow$ AES (2001): Evolved for desktop/server computing
-    \item IoT devices: constrained CPU, memory, power — traditional algorithms impractical
-    \item Mirai botnet (2016): Exploited insecure embedded devices --- millions hijacked
+    \item IoT devices: constrained CPU, memory, power makes traditional algorithms impractical
+    \item Mirai botnet (2016): Exploited insecure embedded devices, with millions hijacked
 \end{itemize}
 
 \vspace{0.2cm}
@@ -170,7 +170,7 @@ This study aims to:
 \textbf{\large Key Finding}: \alert{SPECK is \textbf{70x faster}} than PRESENT and \textbf{3x faster} than ASCON (\alert{23.67 Mbps} vs 0.34 Mbps vs 7.56 Mbps).
 
 \vspace{0.15cm}
-\small \textit{\structure{Insight}}: Single-block throughput shows the dramatic performance gap — SPECK's ARX design dominates on software platforms.
+\small \textit{\structure{Insight}}: Single-block throughput shows the dramatic performance gap: SPECK's ARX design dominates on software platforms.
 \end{frame}
 
 \begin{frame}{Mode Impact: ECB vs CBC vs CTR}
@@ -196,14 +196,14 @@ This study aims to:
 \textbf{\structure{Key Insight}}: Mode overhead is \textbf{\alert{cipher-dependent}}. SPECK loses 11–16\% in CBC/CTR; PRESENT's overhead is \textbf{\structure{negligible}} due to dominant S-box cost.
 
 \vspace{0.1cm}
-\textbf{\textcolor{darkgreen}{Recommendation}}: Use \textbf{CTR} for applications needing semantic security \& parallelism without sacrificing performance.
+\textbf{\textcolor{darkgreen}{Recommendation}}: Use \textbf{CTR} for applications needing semantic security and parallelism without sacrificing performance.
 \end{frame}
 
 \begin{frame}{Why This Performance Gap?}
 \textbf{\structure{Architectural Explanation:}}
 \begin{itemize}
-    \item \textbf{\textcolor{darkgreen}{SPECK (ARX)}}: Add, Rotate, XOR $\rightarrow$ \alert{\textbf{single-cycle ARM}} instructions (\texttt{ADDS}, \texttt{RORS}, \texttt{EORS}) — \textbf{no memory lookups} $\checkmark$
-    \item \textbf{\textcolor{darkred}{PRESENT (SPN)}}: Bit-permutation requires \alert{\textbf{64 separate}} bit extractions/reinsertions per round — 31/32 rounds = \textbf{70x overhead} $\times$
+    \item \textbf{\textcolor{darkgreen}{SPECK (ARX)}}: Add, Rotate, XOR $\rightarrow$ \alert{\textbf{single-cycle ARM}} instructions (\texttt{ADDS}, \texttt{RORS}, \texttt{EORS}), no memory lookups
+    \item \textbf{\textcolor{darkred}{PRESENT (SPN)}}: Bit-permutation requires \alert{\textbf{64 separate}} bit extractions/reinsertions per round, 31/32 rounds = \textbf{70x overhead}
     \item \textbf{\textcolor{darkblue}{ASCON (Sponge)}}: 64-bit words align with Cortex-M0+ datapath, but 12-round $p^a$ permutation \textbf{heavier} than SPECK's 5-instruction round
 \end{itemize}
 
@@ -228,7 +228,7 @@ This study aims to:
     \end{tabular}
 \end{table}
 \vspace{0.2cm}
-\textbf{SPECK}: Smallest ROM ($\sim$1 KB) — ARX-only ops, no lookup tables
+\textbf{SPECK}: Smallest ROM ($\sim$1 KB) from ARX-only ops, no lookup tables
 \end{frame}
 
 \begin{frame}{ASCON Phase Breakdown}
@@ -303,7 +303,7 @@ Performance relative to ASCON:
 \textbf{Insight}: ASCON's 427-cycle init overhead amortizes at larger payloads; SPECK advantage shrinks from 34\% to 3\%.
 
 \vspace{0.1cm}
-\textbf{Note on PRESENT}: Oscillation at small sizes reflects 8-byte block padding overhead vs. cipher cost.
+\textbf{Note on PRESENT}: Oscillation at small sizes reflects 8-byte block padding overhead versus cipher cost.
 \end{column}
 \begin{column}{0.55\textwidth}
 \centering
@@ -335,19 +335,19 @@ Performance relative to ASCON:
 \end{table}
 
 \vspace{0.3cm}
-\small \structure{\textbf{Summary}}: \textcolor{darkgreen}{SPECK} dominates \textbf{performance} and \textbf{ROM}; \textcolor{darkblue}{ASCON} provides \textbf{standardization + AEAD}; \textcolor{darkred}{PRESENT} excels in \textbf{hardware} but \textbf{poor software}.
+\small \structure{\textbf{Summary}}: \textcolor{darkgreen}{SPECK} dominates \textbf{performance} and \textbf{ROM}; \textcolor{darkblue}{ASCON} provides \textbf{standardization and AEAD}; \textcolor{darkred}{PRESENT} excels in \textbf{hardware} but \textbf{poor software}.
 \end{frame}
 
 \begin{frame}{Security Considerations}
 \begin{itemize}
-    \item \textbf{\textcolor{darkblue}{ASCON}}: \alert{\textbf{NIST SP 800-232}}, proven indifferentiability bounds, no attacks on full 12-round permutation (\checkmark \textbf{strongest})
+    \item \textbf{\textcolor{darkblue}{ASCON}}: \alert{\textbf{NIST SP 800-232}}, proven indifferentiability bounds, no attacks on full 12-round permutation \textbf{strongest}
     \item \textbf{\textcolor{darkred}{PRESENT}}: ISO/IEC 29192-2, \textbf{provable SPN} bounds (max diff probability $2^{-2}$), \alert{confidentiality only} (no authentication)
     \item \textbf{\textcolor{darkgreen}{SPECK}}: \alert{\textbf{No provable}} bounds, best attacks reduce 20/27 rounds; \alert{ISO rejection} (NSA origin, geopolitical objections) (\textit{research use only})
     \item \textbf{\structure{Side-channels}}: \alert{\textbf{SPECK}} vulnerable to CPA (50 traces on 8-bit); \textbf{PRESENT's} constant-time ops more resistant; \textbf{ASCON} shows moderate resistance
 \end{itemize}
 
 \vspace{0.2cm}
-\small \textit{\structure{Trade-off}}: \textcolor{darkblue}{ASCON} = strongest security; \textcolor{darkred}{PRESENT} = provable bounds; \textcolor{darkgreen}{SPECK} = fastest but weakest guarantees.
+\small \textit{\structure{Trade-off}}: \textcolor{darkblue}{ASCON} offers strongest security; \textcolor{darkred}{PRESENT} offers provable bounds; \textcolor{darkgreen}{SPECK} is fastest but has weakest guarantees.
 \end{frame}
 
 \begin{frame}{Key Takeaways: Design Lessons}
@@ -361,8 +361,8 @@ Performance relative to ASCON:
 \vspace{0.2cm}
 \textbf{\structure{For Practitioners:}}
 \begin{itemize}
-    \item Choose by \alert{\textbf{workload}}, not by raw speed: \textcolor{darkgreen}{\textbf{sensor data}} (SPECK) vs \textcolor{darkblue}{\textbf{authenticated IoT}} (ASCON) vs \textcolor{darkred}{\textbf{legacy}} (PRESENT)
-    \item \textbf{\structure{Standardization matters}}: NIST-endorsed ASCON gaining adoption; SPECK rejected by ISO (politics + no provable bounds)
+    \item Choose by \alert{\textbf{workload}}, not by raw speed: \textcolor{darkgreen}{\textbf{sensor data}} (SPECK) versus \textcolor{darkblue}{\textbf{authenticated IoT}} (ASCON) versus \textcolor{darkred}{\textbf{legacy}} (PRESENT)
+    \item \textbf{\structure{Standardization matters}}: NIST-endorsed ASCON gaining adoption; SPECK rejected by ISO (politics and no provable bounds)
     \item \textbf{\structure{Context is everything}}: RP2040 (Cortex-M0+) results don't generalize to hardware, 8-bit MCUs, or server environments
 \end{itemize}
 \end{frame}
@@ -372,21 +372,21 @@ Performance relative to ASCON:
 
 \begin{frame}{Use-Case Recommendations}
 \begin{enumerate}
-    \item \textbf{Real-time sensor data}: SPECK-64/128 (CTR) — 23.67 Mbps, 32B RAM
-    \item \textbf{Secure IoT with auth}: ASCON — 7.56 Mbps, AEAD, NIST standardized
-    \item \textbf{RFID tags}: PRESENT — ultra-low gate count (~1570 GE)
-    \item \textbf{Firmware authentication}: ASCON-hash — 320-bit state, 12-round $p^a$
+    \item \textbf{Real-time sensor data}: SPECK-64/128 (CTR), 23.67 Mbps, 32B RAM
+    \item \textbf{Secure IoT with auth}: ASCON, 7.56 Mbps, AEAD, NIST standardized
+    \item \textbf{RFID tags}: PRESENT, ultra-low gate count (~1570 GE)
+    \item \textbf{Firmware authentication}: ASCON-hash, 320-bit state, 12-round $p^a$
     \item \textbf{Hybrid deployment}: SPECK (bulk) + ASCON (auth tags)
-    \item \textbf{Legacy integration}: PRESENT-128 (CBC) — backward compatibility
+    \item \textbf{Legacy integration}: PRESENT-128 (CBC) for backward compatibility
 \end{enumerate}
 \end{frame}
 
 \begin{frame}{Limitations \& Future Work}
 \textbf{\structure{Current Limitations:}}
 \begin{itemize}
-    \item \textbf{Single platform}: RP2040 only — architecture-specific results
-    \item \textbf{Single language}: Rust implementation — no C/C++ comparison
-    \item \textbf{No side-channel analysis}: Timing/power attacks not evaluated
+    \item \textbf{Single platform}: RP2040 only, architecture-specific results
+    \item \textbf{Single language}: Rust implementation, no C/C++ comparison
+    \item \textbf{No side-channel analysis}: Timing and power attacks not evaluated
 \end{itemize}
 
 \vspace{0.2cm}
